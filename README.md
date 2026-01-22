@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FORMGATE
 
-## Getting Started
+**FORMGATE** is a Backlog-first micro-SaaS that turns structured forms into clean, actionable Backlog issues.
 
-First, run the development server:
+> Stop request chaos.  
+> Every form submission becomes a proper Backlog issue.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🎯 What problem does FORMGATE solve?
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+In many Japanese teams using Backlog, requests arrive via:
+- email
+- Slack / LINE
+- meetings / oral instructions
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Result:
+- issues created late or not at all
+- inconsistent priority / type / assignee
+- messy tracking and follow-up
 
-## Learn More
+**FORMGATE removes friction before Backlog**:
+- structured public forms
+- strict validation
+- explicit field mapping
+- automatic issue creation via Backlog API
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🧠 Positioning (Non-negotiable)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 🇯🇵 **Japan-first**
+- 🎯 **Backlog-first** (Notion later, optional)
+- ❌ **No AI** (generic AI cannot act reliably inside Backlog)
+- ❌ No CSV cleaning / no Zapier-style complexity
+- 🧱 Utility SaaS, not hype
+- Built for **solo dev**, low support, fast ROI
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## ✨ MVP Scope (Form → Backlog)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Core
+- Public form creation
+- Field types: text, textarea, select
+- Basic validation (required, length)
+- One public URL per form
+
+### Backlog integration
+- User-provided Backlog API key
+- Select:
+  - Project
+  - Issue type
+  - Priority
+  - Assignee
+- Field mapping → description / custom fields
+- Automatic issue creation on submit
+
+### Platform
+- Simple auth
+- Usage limits by plan
+- Minimal logs (debug / errors only)
+
+---
+
+## 🔐 Security & API
+
+- Uses official Backlog API
+- API keys provided by the user
+- Keys stored encrypted
+- No data reuse outside the user’s intent
+
+---
+
+## 💰 Pricing (indicative)
+
+- **Free**: 1 form / 1 project
+- **Pro**: ~1,500 JPY / month
+- **Team**: ~3,000 JPY / month
+
+---
+
+## 🧰 Tech Stack
+
+- **Frontend / API**: Next.js (App Router, TypeScript)
+- **Database**: Supabase Postgres
+- **ORM**: Drizzle
+- **Hosting**: Vercel
+- **Package manager**: pnpm
+
+No background jobs. No AI. No over-engineering.
+
+---
+
+## 📁 Project structure
+
+```text
+formgate/
+├─ app/              # Next.js app & API routes
+├─ drizzle/          # DB schema & migrations
+├─ lib/              # db, env, crypto utilities
+├─ public/
+├─ README.md
+├─ drizzle.config.ts
+└─ .env.example
