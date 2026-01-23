@@ -1,27 +1,79 @@
 // app/api/forms/[id]/submissions/route.ts
 import { NextResponse } from "next/server";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { submissions } from "@/lib/db/schema";
-import { desc, eq } from "drizzle-orm";
+
+function clampLimit(v: string | null): number {
+  if (v === null) return 50; // ✅ vrai default
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 50;
+  return Math.max(1, Math.min(50, Math.floor(n)));
+}
+
+
+// Cursor format: `${createdAtISO}__${id}`
+// createdAtISO is UTC ISO like 2026-01-23T05:25:52.651Z
+function parseCursor(
+  raw: string | null
+): { createdAtIsoUtc: string; id: string } | null {
+  if (!raw) return null;
+  const [iso, id] = raw.split("__");
+  if (!iso || !id) return null;
+  return { createdAtIsoUtc: iso, id };
+}
 
 export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  req: Request,
+  ctx: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await Promise.resolve(params);
+  const { id: formId } = await Promise.resolve(ctx.params);
 
-  // dernières 50
+  const url = new URL(req.url);
+  const limit = clampLimit(url.searchParams.get("limit"));
+  const before = parseCursor(url.searchParams.get("before"));
+
+  // Convert cursor UTC -> JST "timestamp without time zone"
+  // (timestamptz AT TIME ZONE 'Asia/Tokyo') returns a timestamp (no tz) in JST.
+  const cursorJstTs = before
+    ? sql`((${before.createdAtIsoUtc}::timestamptz) AT TIME ZONE 'Asia/Tokyo')`
+    : null;
+
+  const whereClause = before
+    ? and(
+        eq(submissions.formId, formId),
+        or(
+          // created_at < cursor (both compared as timestamp without tz, JST)
+          sql`${submissions.createdAt}::timestamp < ${cursorJstTs!}`,
+          // OR (created_at = cursor AND id < cursorId)
+          sql`${submissions.createdAt}::timestamp = ${cursorJstTs!} AND (${submissions.id}::text) < (${before.id}::text)`
+        )
+      )
+    : eq(submissions.formId, formId);
+
   const rows = await db
     .select({
       id: submissions.id,
-      formId: submissions.formId,
+      created_at: submissions.createdAt,
       payload: submissions.payload,
-      createdAt: submissions.createdAt,
     })
     .from(submissions)
-    .where(eq(submissions.formId, id))
-    .orderBy(desc(submissions.createdAt))
-    .limit(50);
+    .where(whereClause)
+    // Order must match the same typed expressions used in the cursor comparison
+    .orderBy(
+      desc(sql`${submissions.createdAt}::timestamp`),
+      desc(sql`${submissions.id}::text`)
+    )
+    .limit(limit + 1);
 
-  return NextResponse.json({ submissions: rows });
+  const hasMore = rows.length > limit;
+  const items = hasMore ? rows.slice(0, limit) : rows;
+
+  const last = items[items.length - 1];
+  const nextCursor =
+    hasMore && last
+      ? `${new Date(last.created_at).toISOString()}__${last.id}`
+      : null;
+
+  return NextResponse.json({ items, nextCursor });
 }
