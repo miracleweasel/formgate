@@ -1,25 +1,18 @@
 // app/(dashboard)/forms/page.tsx
 import Link from "next/link";
-
-type Form = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-async function getForms(): Promise<Form[]> {
-  // Same-origin fetch côté serveur : marche en dev/prod
-  const res = await fetch("http://localhost:3000/api/forms", { cache: "no-store" });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.forms ?? [];
-}
+import { db } from "@/lib/db";
+import { forms } from "@/lib/db/schema";
+import { desc } from "drizzle-orm";
 
 export default async function FormsPage() {
-  const forms = await getForms();
+  const list = await db
+    .select({
+      id: forms.id,
+      name: forms.name,
+      slug: forms.slug,
+    })
+    .from(forms)
+    .orderBy(desc(forms.createdAt));
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
@@ -32,10 +25,10 @@ export default async function FormsPage() {
 
       <div className="rounded-md border">
         <ul className="divide-y">
-          {forms.length === 0 ? (
+          {list.length === 0 ? (
             <li className="p-4 text-sm text-gray-600">No forms yet.</li>
           ) : (
-            forms.map((f) => (
+            list.map((f) => (
               <li key={f.id} className="p-4 flex items-center justify-between">
                 <div>
                   <div className="font-medium">{f.name}</div>

@@ -1,54 +1,120 @@
-// app/(dashboard)/forms/page.tsx
+// app/(dashboard)/forms/new/page.tsx
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-type Form = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+export default function NewFormPage() {
+  const router = useRouter();
 
-async function getForms(): Promise<Form[]> {
-  // Same-origin fetch côté serveur : marche en dev/prod
-  const res = await fetch("http://localhost:3000/api/forms", { cache: "no-store" });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.forms ?? [];
-}
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export default async function FormsPage() {
-  const forms = await getForms();
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    const n = name.trim();
+    const s = slug.trim();
+    const d = description.trim();
+
+    if (!n) return setError("Name is required.");
+    if (!s) return setError("Slug is required.");
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/forms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: n,
+          slug: s,
+          description: d ? d : null,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Create failed");
+
+      // si ton API renvoie { form: { id } } on redirige vers le détail
+      const id = data?.form?.id;
+      if (id) router.push(`/forms/${id}`);
+      else router.push("/forms");
+      router.refresh();
+    } catch (err: any) {
+      setError(String(err?.message || err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Forms</h1>
-        <Link className="px-3 py-2 rounded-md bg-black text-white text-sm" href="/forms/new">
-          New form
+        <h1 className="text-xl font-semibold">New form</h1>
+        <Link href="/forms" className="rounded-md border px-3 py-2 text-sm">
+          Back
         </Link>
       </div>
 
-      <div className="rounded-md border">
-        <ul className="divide-y">
-          {forms.length === 0 ? (
-            <li className="p-4 text-sm text-gray-600">No forms yet.</li>
-          ) : (
-            forms.map((f) => (
-              <li key={f.id} className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{f.name}</div>
-                  <div className="text-sm text-gray-600">/{f.slug}</div>
-                </div>
-                <Link className="text-sm underline" href={`/forms/${f.id}`}>
-                  View
-                </Link>
-              </li>
-            ))
-          )}
-        </ul>
-      </div>
+      <form onSubmit={onSubmit} className="rounded-md border p-4 space-y-4">
+        <div className="space-y-1">
+          <label className="text-sm font-medium" htmlFor="name">
+            Name <span className="text-red-600">*</span>
+          </label>
+          <input
+            id="name"
+            className="w-full rounded border px-3 py-2"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={submitting}
+            required
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-sm font-medium" htmlFor="slug">
+            Slug <span className="text-red-600">*</span>
+          </label>
+          <input
+            id="slug"
+            className="w-full rounded border px-3 py-2"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            disabled={submitting}
+            placeholder="example: demo"
+            required
+          />
+          <p className="text-xs text-gray-500">Used in /f/&lt;slug&gt;</p>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-sm font-medium" htmlFor="description">
+            Description (optional)
+          </label>
+          <textarea
+            id="description"
+            className="w-full rounded border px-3 py-2 min-h-[90px]"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={submitting}
+          />
+        </div>
+
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded bg-black px-4 py-2 text-white text-sm disabled:opacity-50"
+        >
+          {submitting ? "Creating..." : "Create"}
+        </button>
+      </form>
     </div>
   );
 }
