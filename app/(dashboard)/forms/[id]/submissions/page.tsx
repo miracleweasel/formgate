@@ -10,6 +10,7 @@ import { forms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 import SubmissionsListClient from "./SubmissionsListClient";
+import ExportCsvButtonClient from "./ExportCsvButtonClient";
 
 type SearchParams = {
   debug_limit?: string | string[];
@@ -74,8 +75,16 @@ export default async function Page(props: {
   return (
     <div className="p-6 space-y-6">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold">{form.name}</h1>
-        <div className="text-sm text-gray-600">/{form.slug}</div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-xl font-semibold">{form.name}</h1>
+            <div className="text-sm text-gray-600">/{form.slug}</div>
+          </div>
+
+          <div className="pt-1">
+            <ExportCsvButtonClient formId={id} latestLimit={limit} />
+          </div>
+        </div>
 
         <div className="pt-2">
           <Link className="text-sm underline" href={`/forms/${id}`}>
