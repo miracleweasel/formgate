@@ -21,6 +21,8 @@ function normalizeQuery(v: string): string {
   return v.trim();
 }
 
+type RangeKey = "" | "today" | "7d" | "30d";
+
 export default function SubmissionsListClient(props: {
   formId: string;
   initialItems: SubmissionRow[];
@@ -33,38 +35,52 @@ export default function SubmissionsListClient(props: {
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
   const [loading, setLoading] = useState(false);
 
-  // Search state
+  // Search
   const [inputEmail, setInputEmail] = useState("");
   const [activeEmail, setActiveEmail] = useState<string>("");
+
+  // Range filter
+  const [activeRange, setActiveRange] = useState<RangeKey>("");
 
   const activeEmailLabel = useMemo(() => {
     const q = activeEmail.trim();
     return q ? q : null;
   }, [activeEmail]);
 
-  // If the page is navigated to another form id, reset base state
+  const activeRangeLabel = useMemo(() => {
+    if (activeRange === "today") return "Today";
+    if (activeRange === "7d") return "Last 7 days";
+    if (activeRange === "30d") return "Last 30 days";
+    return null;
+  }, [activeRange]);
+
   useEffect(() => {
     setItems(initialItems);
     setNextCursor(initialNextCursor);
     setLoading(false);
     setInputEmail("");
     setActiveEmail("");
+    setActiveRange("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formId]);
 
-  function buildQs(before?: string | null, email?: string) {
+  function buildQs(before?: string | null, email?: string, range?: RangeKey) {
     const qs = new URLSearchParams();
     qs.set("limit", String(limit));
     if (before) qs.set("before", before);
+
     const e = normalizeQuery(email ?? "");
     if (e) qs.set("email", e);
+
+    if (range) qs.set("range", range);
+
     return qs;
   }
 
-  async function fetchFirstPage(email: string) {
+  async function fetchFirstPage(email: string, range: RangeKey) {
     setLoading(true);
     try {
-      const qs = buildQs(null, email);
+      const qs = buildQs(null, email, range);
       const res = await fetch(`/api/forms/${formId}/submissions?${qs.toString()}`, {
         cache: "no-store",
       });
@@ -86,7 +102,7 @@ export default function SubmissionsListClient(props: {
     if (!nextCursor || loading) return;
     setLoading(true);
     try {
-      const qs = buildQs(nextCursor, activeEmail);
+      const qs = buildQs(nextCursor, activeEmail, activeRange);
 
       const res = await fetch(`/api/forms/${formId}/submissions?${qs.toString()}`, {
         cache: "no-store",
@@ -100,7 +116,6 @@ export default function SubmissionsListClient(props: {
 
       const newItems = data.items ?? [];
 
-      // append + dedupe (safe)
       setItems((prev) => {
         const seen = new Set(prev.map((x) => x.id));
         const merged = [...prev];
@@ -119,49 +134,103 @@ export default function SubmissionsListClient(props: {
   async function onSearch() {
     const q = normalizeQuery(inputEmail);
     setActiveEmail(q);
-    await fetchFirstPage(q);
+    await fetchFirstPage(q, activeRange);
   }
 
-  async function onClear() {
+  async function onClearSearch() {
     setInputEmail("");
     setActiveEmail("");
-    await fetchFirstPage("");
+    await fetchFirstPage("", activeRange);
   }
 
-  const emptyLabel = activeEmailLabel
-    ? `No submissions for "${activeEmailLabel}".`
+  async function setRange(r: RangeKey) {
+    setActiveRange(r);
+    await fetchFirstPage(activeEmail, r);
+  }
+
+  const emptyLabel = activeEmailLabel || activeRangeLabel
+    ? `No submissions${activeEmailLabel ? ` for "${activeEmailLabel}"` : ""}${activeRangeLabel ? ` in ${activeRangeLabel}` : ""}.`
     : "No submissions yet.";
 
   return (
     <div className="space-y-4">
-      {/* Search bar */}
+      {/* Filters row */}
       <div className="flex flex-wrap items-center gap-2">
-        <input
-          className="border rounded px-3 py-2 text-sm w-[260px] max-w-full"
-          placeholder="Search by email"
-          value={inputEmail}
-          onChange={(e) => setInputEmail(e.target.value)}
-        />
-        <button
-          type="button"
-          className="border rounded px-3 py-2 text-sm"
-          onClick={onSearch}
-          disabled={loading}
-        >
-          Search
-        </button>
-        <button
-          type="button"
-          className="text-sm underline"
-          onClick={onClear}
-          disabled={loading}
-        >
-          Clear
-        </button>
+        {/* Range buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className={`border rounded px-3 py-2 text-sm ${activeRange === "" ? "bg-black text-white" : ""}`}
+            onClick={() => setRange("")}
+            disabled={loading}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            className={`border rounded px-3 py-2 text-sm ${activeRange === "today" ? "bg-black text-white" : ""}`}
+            onClick={() => setRange("today")}
+            disabled={loading}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            className={`border rounded px-3 py-2 text-sm ${activeRange === "7d" ? "bg-black text-white" : ""}`}
+            onClick={() => setRange("7d")}
+            disabled={loading}
+          >
+            Last 7 days
+          </button>
+          <button
+            type="button"
+            className={`border rounded px-3 py-2 text-sm ${activeRange === "30d" ? "bg-black text-white" : ""}`}
+            onClick={() => setRange("30d")}
+            disabled={loading}
+          >
+            Last 30 days
+          </button>
+        </div>
 
-        {activeEmailLabel ? (
+        {/* Email search */}
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            className="border rounded px-3 py-2 text-sm w-[260px] max-w-full"
+            placeholder="Search by email"
+            value={inputEmail}
+            onChange={(e) => setInputEmail(e.target.value)}
+          />
+          <button
+            type="button"
+            className="border rounded px-3 py-2 text-sm"
+            onClick={onSearch}
+            disabled={loading}
+          >
+            Search
+          </button>
+          <button
+            type="button"
+            className="text-sm underline"
+            onClick={onClearSearch}
+            disabled={loading}
+          >
+            Clear
+          </button>
+        </div>
+
+        {(activeEmailLabel || activeRangeLabel) ? (
           <div className="text-sm text-gray-600">
-            Filter: <span className="font-medium">{activeEmailLabel}</span>
+            {activeRangeLabel ? (
+              <>
+                Range: <span className="font-medium">{activeRangeLabel}</span>
+              </>
+            ) : null}
+            {activeRangeLabel && activeEmailLabel ? <span className="mx-2">•</span> : null}
+            {activeEmailLabel ? (
+              <>
+                Filter: <span className="font-medium">{activeEmailLabel}</span>
+              </>
+            ) : null}
           </div>
         ) : null}
       </div>

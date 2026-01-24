@@ -25,8 +25,32 @@ function parseCursor(
 function normalizeEmailQuery(raw: string | null): string | null {
   const v = String(raw ?? "").trim();
   if (!v) return null;
-  // clamp anti-abus (et évite patterns géants)
   return v.length > 200 ? v.slice(0, 200) : v;
+}
+
+type RangeKey = "today" | "7d" | "30d";
+function parseRange(raw: string | null): RangeKey | null {
+  const v = String(raw ?? "").trim().toLowerCase();
+  if (v === "today" || v === "7d" || v === "30d") return v;
+  return null;
+}
+
+/**
+ * created_at est comparé en ::timestamp (sans tz) côté API (JST).
+ * On fabrique une borne basse "timestamp JST" pour rester cohérent.
+ */
+function lowerBoundJstTs(range: RangeKey) {
+  const nowJstTs = sql`(now() AT TIME ZONE 'Asia/Tokyo')::timestamp`;
+
+  if (range === "today") {
+    // start of today JST
+    return sql`date_trunc('day', ${nowJstTs})`;
+  }
+  if (range === "7d") {
+    return sql`${nowJstTs} - interval '7 days'`;
+  }
+  // "30d"
+  return sql`${nowJstTs} - interval '30 days'`;
 }
 
 export async function GET(
@@ -39,9 +63,9 @@ export async function GET(
   const limit = clampLimit(url.searchParams.get("limit"));
   const before = parseCursor(url.searchParams.get("before"));
   const emailQuery = normalizeEmailQuery(url.searchParams.get("email"));
+  const range = parseRange(url.searchParams.get("range"));
 
   // Convert cursor UTC -> JST "timestamp without time zone"
-  // (timestamptz AT TIME ZONE 'Asia/Tokyo') returns a timestamp (no tz) in JST.
   const cursorJstTs = before
     ? sql`((${before.createdAtIsoUtc}::timestamptz) AT TIME ZONE 'Asia/Tokyo')`
     : null;
@@ -51,17 +75,21 @@ export async function GET(
     ? sql`${submissions.payload} ->> 'email' ILIKE ${"%" + emailQuery + "%"}`
     : null;
 
-  const baseCond = emailCond
-    ? and(eq(submissions.formId, formId), emailCond)
-    : eq(submissions.formId, formId);
+  // Optional time range lower bound (JST timestamp)
+  const rangeCond = range
+    ? sql`${submissions.createdAt}::timestamp >= ${lowerBoundJstTs(range)}`
+    : null;
+
+  // Base conditions
+  let baseCond = eq(submissions.formId, formId);
+  if (emailCond) baseCond = and(baseCond, emailCond);
+  if (rangeCond) baseCond = and(baseCond, rangeCond);
 
   const whereClause = before
     ? and(
         baseCond,
         or(
-          // created_at < cursor (both compared as timestamp without tz, JST)
           sql`${submissions.createdAt}::timestamp < ${cursorJstTs!}`,
-          // OR (created_at = cursor AND id < cursorId)
           sql`${submissions.createdAt}::timestamp = ${cursorJstTs!} AND (${submissions.id}::text) < (${before.id}::text)`
         )
       )
@@ -75,7 +103,6 @@ export async function GET(
     })
     .from(submissions)
     .where(whereClause)
-    // Order must match the same typed expressions used in the cursor comparison
     .orderBy(
       desc(sql`${submissions.createdAt}::timestamp`),
       desc(sql`${submissions.id}::text`)
