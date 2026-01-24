@@ -1,27 +1,16 @@
 // lib/db/schema.ts
-import {
-  pgTable,
-  uuid,
-  text,
-  timestamp,
-  jsonb,
-  index,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
 
-// NOTE: j’assume que `forms` existe déjà dans ce fichier.
-// Si ton `forms` est dans un autre fichier, dis-moi et j’adapte.
 export const forms = pgTable("forms", {
   id: uuid("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
-    .defaultNow(),
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const submissions = pgTable(
@@ -34,9 +23,7 @@ export const submissions = pgTable(
 
     payload: jsonb("payload").notNull(),
 
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     formIdIdx: index("submissions_form_id_idx").on(t.formId),

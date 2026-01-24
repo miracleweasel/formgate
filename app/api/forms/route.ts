@@ -36,13 +36,11 @@ export async function POST(req: Request) {
         name,
         slug,
         description: description && description.trim() ? description.trim() : null,
-        // updatedAt reste defaultNow en J2 ; OK.
       })
       .returning();
 
     return NextResponse.json({ form: created }, { status: 201 });
   } catch (e: any) {
-    // Postgres unique violation
     if (e?.code === "23505") {
       return NextResponse.json({ error: "slug already exists" }, { status: 409 });
     }
