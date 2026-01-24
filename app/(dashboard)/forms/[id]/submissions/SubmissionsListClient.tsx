@@ -177,8 +177,12 @@ export default function SubmissionsListClient(props: {
 
   return (
     <div className="space-y-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+        Filters
+        </div>
       {/* Sticky filter bar */}
-      <div className="sticky top-0 z-10 -mx-6 px-6 py-3 bg-white/90 backdrop-blur border-b">
+        <div className="sticky top-0 z-20 -mx-6 px-6 py-3 bg-gray-900 text-white border-b border-gray-700 shadow">
+        <div className="px-6">
         <div className="flex flex-wrap items-center gap-2">
           {/* Range buttons */}
           <div className="flex flex-wrap items-center gap-2">
@@ -264,6 +268,7 @@ export default function SubmissionsListClient(props: {
             ) : null}
           </div>
         </div>
+        </div>
       </div>
 
       {/* List */}
@@ -274,7 +279,9 @@ export default function SubmissionsListClient(props: {
           {items.map((s) => {
             const payload = (s.payload ?? {}) as Record<string, unknown>;
             const email =
-              typeof payload.email === "string" && payload.email.trim() ? payload.email.trim() : "—";
+              typeof payload.email === "string" && payload.email.trim()
+                ? payload.email.trim()
+                : "—";
             const message =
               typeof payload.message === "string" && payload.message.trim()
                 ? payload.message.trim()

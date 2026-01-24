@@ -5,14 +5,12 @@ import { db } from "@/lib/db";
 import { submissions } from "@/lib/db/schema";
 
 function clampLimit(v: string | null): number {
-  if (v === null) return 50; // ✅ vrai default
+  if (v === null) return 50;
   const n = Number(v);
   if (!Number.isFinite(n)) return 50;
   return Math.max(1, Math.min(50, Math.floor(n)));
 }
 
-// Cursor format: `${createdAtISO}__${id}`
-// createdAtISO is UTC ISO like 2026-01-23T05:25:52.651Z
 function parseCursor(
   raw: string | null
 ): { createdAtIsoUtc: string; id: string } | null {
@@ -35,21 +33,15 @@ function parseRange(raw: string | null): RangeKey | null {
   return null;
 }
 
-/**
- * created_at est comparé en ::timestamp (sans tz) côté API (JST).
- * On fabrique une borne basse "timestamp JST" pour rester cohérent.
- */
 function lowerBoundJstTs(range: RangeKey) {
   const nowJstTs = sql`(now() AT TIME ZONE 'Asia/Tokyo')::timestamp`;
 
   if (range === "today") {
-    // start of today JST
     return sql`date_trunc('day', ${nowJstTs})`;
   }
   if (range === "7d") {
     return sql`${nowJstTs} - interval '7 days'`;
   }
-  // "30d"
   return sql`${nowJstTs} - interval '30 days'`;
 }
 
@@ -65,25 +57,31 @@ export async function GET(
   const emailQuery = normalizeEmailQuery(url.searchParams.get("email"));
   const range = parseRange(url.searchParams.get("range"));
 
-  // Convert cursor UTC -> JST "timestamp without time zone"
+  // Convert cursor UTC -> JST timestamp (no tz)
   const cursorJstTs = before
     ? sql`((${before.createdAtIsoUtc}::timestamptz) AT TIME ZONE 'Asia/Tokyo')`
     : null;
 
-  // Optional email filter (payload->>'email' ILIKE %q%)
-  const emailCond = emailQuery
-    ? sql`${submissions.payload} ->> 'email' ILIKE ${"%" + emailQuery + "%"}`
-    : null;
+  // Optional email filter: payload->>'email' ILIKE %q%
+  const emailCond =
+    emailQuery !== null
+      ? sql`${submissions.payload} ->> 'email' ILIKE ${"%" + emailQuery + "%"}`
+      : null;
 
-  // Optional time range lower bound (JST timestamp)
-  const rangeCond = range
-    ? sql`${submissions.createdAt}::timestamp >= ${lowerBoundJstTs(range)}`
-    : null;
+  // Optional range filter (JST timestamp)
+  const rangeCond =
+    range !== null
+      ? sql`${submissions.createdAt}::timestamp >= ${lowerBoundJstTs(range)}`
+      : null;
 
-  // Base conditions
-  let baseCond = eq(submissions.formId, formId);
-  if (emailCond) baseCond = and(baseCond, emailCond);
-  if (rangeCond) baseCond = and(baseCond, rangeCond);
+  // Base conditions array (no undefined)
+  const conds: Array<ReturnType<typeof eq> | ReturnType<typeof sql>> = [
+    eq(submissions.formId, formId),
+  ];
+  if (emailCond) conds.push(emailCond);
+  if (rangeCond) conds.push(rangeCond);
+
+  const baseCond = and(...conds);
 
   const whereClause = before
     ? and(
