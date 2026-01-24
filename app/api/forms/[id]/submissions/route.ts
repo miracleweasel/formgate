@@ -11,7 +11,6 @@ function clampLimit(v: string | null): number {
   return Math.max(1, Math.min(50, Math.floor(n)));
 }
 
-
 // Cursor format: `${createdAtISO}__${id}`
 // createdAtISO is UTC ISO like 2026-01-23T05:25:52.651Z
 function parseCursor(
@@ -23,6 +22,13 @@ function parseCursor(
   return { createdAtIsoUtc: iso, id };
 }
 
+function normalizeEmailQuery(raw: string | null): string | null {
+  const v = String(raw ?? "").trim();
+  if (!v) return null;
+  // clamp anti-abus (et évite patterns géants)
+  return v.length > 200 ? v.slice(0, 200) : v;
+}
+
 export async function GET(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
@@ -32,6 +38,7 @@ export async function GET(
   const url = new URL(req.url);
   const limit = clampLimit(url.searchParams.get("limit"));
   const before = parseCursor(url.searchParams.get("before"));
+  const emailQuery = normalizeEmailQuery(url.searchParams.get("email"));
 
   // Convert cursor UTC -> JST "timestamp without time zone"
   // (timestamptz AT TIME ZONE 'Asia/Tokyo') returns a timestamp (no tz) in JST.
@@ -39,9 +46,18 @@ export async function GET(
     ? sql`((${before.createdAtIsoUtc}::timestamptz) AT TIME ZONE 'Asia/Tokyo')`
     : null;
 
+  // Optional email filter (payload->>'email' ILIKE %q%)
+  const emailCond = emailQuery
+    ? sql`${submissions.payload} ->> 'email' ILIKE ${"%" + emailQuery + "%"}`
+    : null;
+
+  const baseCond = emailCond
+    ? and(eq(submissions.formId, formId), emailCond)
+    : eq(submissions.formId, formId);
+
   const whereClause = before
     ? and(
-        eq(submissions.formId, formId),
+        baseCond,
         or(
           // created_at < cursor (both compared as timestamp without tz, JST)
           sql`${submissions.createdAt}::timestamp < ${cursorJstTs!}`,
@@ -49,7 +65,7 @@ export async function GET(
           sql`${submissions.createdAt}::timestamp = ${cursorJstTs!} AND (${submissions.id}::text) < (${before.id}::text)`
         )
       )
-    : eq(submissions.formId, formId);
+    : baseCond;
 
   const rows = await db
     .select({

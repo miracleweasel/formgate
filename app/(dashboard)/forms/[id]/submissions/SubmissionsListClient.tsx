@@ -1,7 +1,7 @@
 // app/(dashboard)/forms/[id]/submissions/SubmissionsListClient.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type SubmissionRow = {
   id: string;
@@ -17,6 +17,10 @@ function fmtDate(v: string) {
   }
 }
 
+function normalizeQuery(v: string): string {
+  return v.trim();
+}
+
 export default function SubmissionsListClient(props: {
   formId: string;
   initialItems: SubmissionRow[];
@@ -29,13 +33,60 @@ export default function SubmissionsListClient(props: {
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
   const [loading, setLoading] = useState(false);
 
+  // Search state
+  const [inputEmail, setInputEmail] = useState("");
+  const [activeEmail, setActiveEmail] = useState<string>("");
+
+  const activeEmailLabel = useMemo(() => {
+    const q = activeEmail.trim();
+    return q ? q : null;
+  }, [activeEmail]);
+
+  // If the page is navigated to another form id, reset base state
+  useEffect(() => {
+    setItems(initialItems);
+    setNextCursor(initialNextCursor);
+    setLoading(false);
+    setInputEmail("");
+    setActiveEmail("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formId]);
+
+  function buildQs(before?: string | null, email?: string) {
+    const qs = new URLSearchParams();
+    qs.set("limit", String(limit));
+    if (before) qs.set("before", before);
+    const e = normalizeQuery(email ?? "");
+    if (e) qs.set("email", e);
+    return qs;
+  }
+
+  async function fetchFirstPage(email: string) {
+    setLoading(true);
+    try {
+      const qs = buildQs(null, email);
+      const res = await fetch(`/api/forms/${formId}/submissions?${qs.toString()}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+
+      const data = (await res.json()) as {
+        items: SubmissionRow[];
+        nextCursor: string | null;
+      };
+
+      setItems(data.items ?? []);
+      setNextCursor(data.nextCursor ?? null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function loadMore() {
     if (!nextCursor || loading) return;
     setLoading(true);
     try {
-      const qs = new URLSearchParams();
-      qs.set("limit", String(limit));
-      qs.set("before", nextCursor);
+      const qs = buildQs(nextCursor, activeEmail);
 
       const res = await fetch(`/api/forms/${formId}/submissions?${qs.toString()}`, {
         cache: "no-store",
@@ -65,40 +116,88 @@ export default function SubmissionsListClient(props: {
     }
   }
 
-  if (items.length === 0) {
-    return <div className="text-sm text-gray-600">No submissions yet.</div>;
+  async function onSearch() {
+    const q = normalizeQuery(inputEmail);
+    setActiveEmail(q);
+    await fetchFirstPage(q);
   }
+
+  async function onClear() {
+    setInputEmail("");
+    setActiveEmail("");
+    await fetchFirstPage("");
+  }
+
+  const emptyLabel = activeEmailLabel
+    ? `No submissions for "${activeEmailLabel}".`
+    : "No submissions yet.";
 
   return (
     <div className="space-y-4">
-      <div className="space-y-3">
-        {items.map((s) => {
-          const payload = (s.payload ?? {}) as Record<string, unknown>;
-          const email =
-            typeof payload.email === "string" && payload.email.trim()
-              ? payload.email.trim()
-              : "—";
-          const message =
-            typeof payload.message === "string" && payload.message.trim()
-              ? payload.message.trim()
-              : "—";
+      {/* Search bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          className="border rounded px-3 py-2 text-sm w-[260px] max-w-full"
+          placeholder="Search by email"
+          value={inputEmail}
+          onChange={(e) => setInputEmail(e.target.value)}
+        />
+        <button
+          type="button"
+          className="border rounded px-3 py-2 text-sm"
+          onClick={onSearch}
+          disabled={loading}
+        >
+          Search
+        </button>
+        <button
+          type="button"
+          className="text-sm underline"
+          onClick={onClear}
+          disabled={loading}
+        >
+          Clear
+        </button>
 
-          return (
-            <div key={s.id} className="border rounded p-3">
-              <div className="text-xs text-gray-600">{fmtDate(s.created_at)}</div>
-              <div className="text-sm">
-                <div>
-                  <span className="font-medium">Email:</span> {email}
-                </div>
-                <div className="mt-1">
-                  <span className="font-medium">Message:</span>{" "}
-                  <span className="whitespace-pre-wrap">{message}</span>
+        {activeEmailLabel ? (
+          <div className="text-sm text-gray-600">
+            Filter: <span className="font-medium">{activeEmailLabel}</span>
+          </div>
+        ) : null}
+      </div>
+
+      {items.length === 0 ? (
+        <div className="text-sm text-gray-600">{emptyLabel}</div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((s) => {
+            const payload = (s.payload ?? {}) as Record<string, unknown>;
+            const email =
+              typeof payload.email === "string" && payload.email.trim()
+                ? payload.email.trim()
+                : "—";
+            const message =
+              typeof payload.message === "string" && payload.message.trim()
+                ? payload.message.trim()
+                : "—";
+
+            return (
+              <div key={s.id} className="border rounded p-3">
+                <div className="text-xs text-gray-600">{fmtDate(s.created_at)}</div>
+                <div className="text-sm">
+                  <div>
+                    <span className="font-medium">Email:</span> {email}
+                  </div>
+                  <div className="mt-1">
+                    <span className="font-medium">Message:</span>{" "}
+                    <span className="whitespace-pre-wrap">{message}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {nextCursor ? (
         <button
