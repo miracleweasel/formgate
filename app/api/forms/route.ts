@@ -4,13 +4,36 @@ import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
 import { desc } from "drizzle-orm";
 import { slugify } from "@/lib/forms/utils";
+import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
+import { getAdminEmail } from "@/lib/auth/admin";
 
-export async function GET() {
+function getCookieValue(cookieHeader: string, name: string) {
+  const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+async function requireAdmin(req: Request) {
+  const cookieHeader = req.headers.get("cookie") ?? "";
+  const raw = getCookieValue(cookieHeader, "fg_session");
+  const session = await parseSessionCookieValue(raw);
+  if (!session || !isSessionValid(session)) return false;
+  return session.email.toLowerCase() === getAdminEmail();
+}
+
+
+
+export async function GET(req: Request) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   const rows = await db.select().from(forms).orderBy(desc(forms.createdAt));
   return NextResponse.json({ forms: rows });
 }
 
 export async function POST(req: Request) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   const body = await req.json().catch(() => ({} as any));
 
   const name = String(body?.name ?? "").trim();

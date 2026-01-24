@@ -3,6 +3,23 @@ import { NextResponse } from "next/server";
 import { and, desc, eq, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { submissions } from "@/lib/db/schema";
+import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
+import { getAdminEmail } from "@/lib/auth/admin";
+
+function getCookieValue(cookieHeader: string, name: string) {
+  const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+async function requireAdmin(req: Request) {
+  const cookieHeader = req.headers.get("cookie") ?? "";
+  const raw = getCookieValue(cookieHeader, "fg_session");
+    const session = await parseSessionCookieValue(raw);
+    if (!session || !isSessionValid(session)) return false;
+    return session.email.toLowerCase() === getAdminEmail();
+
+}
+
 
 function clampLimit(v: string | null): number {
   if (v === null) return 50;
@@ -49,6 +66,9 @@ export async function GET(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
+    if (!(await requireAdmin(req))) {
+        return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
   const { id: formId } = await Promise.resolve(ctx.params);
 
   const url = new URL(req.url);
