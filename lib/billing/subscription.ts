@@ -35,3 +35,13 @@ export async function setSubscriptionStatus(params: {
     })
     .where(eq(subscriptions.userEmail, params.userEmail));
 }
+
+export async function getSubscriptionStatus(userEmail: string) {
+  const rows = await db
+    .select({ status: subscriptions.status })
+    .from(subscriptions)
+    .where(eq(subscriptions.userEmail, userEmail))
+    .limit(1);
+
+  return (rows[0]?.status as "active" | "inactive" | undefined) ?? "inactive";
+}
