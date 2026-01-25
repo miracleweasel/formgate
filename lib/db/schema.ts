@@ -30,3 +30,27 @@ export const submissions = pgTable(
     createdAtIdx: index("submissions_created_at_idx").on(t.createdAt),
   })
 );
+
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").primaryKey(),
+
+    // MVP admin-only : on attache à l’admin
+    userEmail: text("user_email").notNull(),
+
+    status: text("status").notNull(), // 'active' | 'inactive'
+
+    lsSubscriptionId: text("ls_subscription_id").unique(),
+    lsCustomerId: text("ls_customer_id"),
+
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    userEmailIdx: index("subscriptions_user_email_idx").on(t.userEmail),
+    statusIdx: index("subscriptions_status_idx").on(t.status),
+  })
+);
