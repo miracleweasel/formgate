@@ -4,6 +4,7 @@ import { createCheckoutUrl } from "@/lib/billing/lemonsqueezy";
 import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
 import { getAdminEmail } from "@/lib/auth/admin";
 import { unauthorized, internalError } from "@/lib/http/errors";
+import { getClientIp, rateLimitOrNull } from "@/lib/http/rateLimit";
 
 function getCookieValue(cookieHeader: string, name: string) {
   const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
@@ -21,11 +22,19 @@ async function requireAdmin(req: Request) {
 }
 
 export async function POST(req: Request) {
-  // Admin-only: checkout URL must not be creatable by the public.
   if (!(await requireAdmin(req))) return unauthorized();
 
+  // Best-effort rate limiting (per instance). Still useful to reduce abuse/spam.
+  const ip = getClientIp(req);
+  const limited = rateLimitOrNull({
+    key: `billing_checkout:${ip}`,
+    limit: 10,
+    windowMs: 5 * 60 * 1000,
+    addRetryAfter: true,
+  });
+  if (limited) return limited;
+
   try {
-    // Keep behavior: use configured admin email as the Lemon Squeezy customer email
     const email = process.env.ADMIN_EMAIL;
     if (!email || !email.trim()) {
       console.error("[billing/checkout] Missing ADMIN_EMAIL env var");
