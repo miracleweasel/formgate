@@ -7,7 +7,13 @@ import { forms } from "@/lib/db/schema";
 import { slugify } from "@/lib/forms/utils";
 import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
 import { getAdminEmail } from "@/lib/auth/admin";
-import { unauthorized, internalError, jsonError } from "@/lib/http/errors";
+import {
+  unauthorized,
+  internalError,
+  jsonError,
+} from "@/lib/http/errors";
+
+import { CreateFormSchema } from "@/lib/validation/forms";
 
 function getCookieValue(cookieHeader: string, name: string) {
   const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
@@ -34,16 +40,23 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   if (!(await requireAdmin(req))) return unauthorized();
 
-  const body = await req.json().catch(() => ({} as any));
+  const rawBody = await req.json().catch(() => null);
 
-  const name = String(body?.name ?? "").trim();
-  const description = body?.description == null ? null : String(body.description);
-  const rawSlug = String(body?.slug ?? "").trim();
+  const parsed = CreateFormSchema.safeParse(rawBody);
 
-  if (!name) return jsonError(400, "name is required");
+  if (!parsed.success) {
+    const msg =
+      parsed.error.issues[0]?.message ?? "invalid input";
+    return jsonError(400, msg);
+  }
 
-  const slug = rawSlug ? slugify(rawSlug) : slugify(name);
-  if (!slug) return jsonError(400, "slug is invalid");
+  const { name, slug: rawSlug, description } = parsed.data;
+
+  const finalSlug = rawSlug
+    ? slugify(rawSlug)
+    : slugify(name);
+
+  if (!finalSlug) return jsonError(400, "slug is invalid");
 
   try {
     const id = crypto.randomUUID();
@@ -53,15 +66,18 @@ export async function POST(req: Request) {
       .values({
         id,
         name,
-        slug,
-        description: description && description.trim() ? description.trim() : null,
+        slug: finalSlug,
+        description: description || null,
       })
       .returning();
 
     return NextResponse.json({ form: created }, { status: 201 });
   } catch (e: any) {
-    if (e?.code === "23505") return jsonError(409, "slug already exists");
-    console.error(e);
+    if (e?.code === "23505") {
+      return jsonError(409, "slug already exists");
+    }
+
+    console.error("[forms] create error", e);
     return internalError();
   }
 }
