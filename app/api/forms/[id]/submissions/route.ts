@@ -1,10 +1,12 @@
 // app/api/forms/[id]/submissions/route.ts
 import { NextResponse } from "next/server";
 import { and, desc, eq, or, sql } from "drizzle-orm";
+
 import { db } from "@/lib/db";
 import { submissions } from "@/lib/db/schema";
 import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
 import { getAdminEmail } from "@/lib/auth/admin";
+import { unauthorized, badRequest } from "@/lib/http/errors";
 
 function getCookieValue(cookieHeader: string, name: string) {
   const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
@@ -14,12 +16,12 @@ function getCookieValue(cookieHeader: string, name: string) {
 async function requireAdmin(req: Request) {
   const cookieHeader = req.headers.get("cookie") ?? "";
   const raw = getCookieValue(cookieHeader, "fg_session");
-    const session = await parseSessionCookieValue(raw);
-    if (!session || !isSessionValid(session)) return false;
-    return session.email.toLowerCase() === getAdminEmail();
 
+  const session = await parseSessionCookieValue(raw);
+  if (!session || !isSessionValid(session)) return false;
+
+  return session.email.toLowerCase() === getAdminEmail();
 }
-
 
 function clampLimit(v: string | null): number {
   if (v === null) return 50;
@@ -28,13 +30,30 @@ function clampLimit(v: string | null): number {
   return Math.max(1, Math.min(50, Math.floor(n)));
 }
 
-function parseCursor(
-  raw: string | null
-): { createdAtIsoUtc: string; id: string } | null {
+function looksLikeUuid(v: string): boolean {
+  // Soft check to reduce attack surface; do not over-enforce to avoid breaking existing ids
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    v
+  );
+}
+
+type Cursor = { createdAtIsoUtc: string; id: string };
+
+function parseCursor(raw: string | null): Cursor | null {
   if (!raw) return null;
+  if (raw.length > 300) return null;
+
   const [iso, id] = raw.split("__");
   if (!iso || !id) return null;
-  return { createdAtIsoUtc: iso, id };
+
+  // Basic ISO date validation (must be parseable)
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+
+  const safeId = String(id).trim();
+  if (!safeId || safeId.length > 80) return null;
+
+  return { createdAtIsoUtc: d.toISOString(), id: safeId };
 }
 
 function normalizeEmailQuery(raw: string | null): string | null {
@@ -51,6 +70,7 @@ function parseRange(raw: string | null): RangeKey | null {
 }
 
 function lowerBoundJstTs(range: RangeKey) {
+  // "now" in JST as timestamp (no tz)
   const nowJstTs = sql`(now() AT TIME ZONE 'Asia/Tokyo')::timestamp`;
 
   if (range === "today") {
@@ -66,10 +86,16 @@ export async function GET(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
-    if (!(await requireAdmin(req))) {
-        return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-  const { id: formId } = await Promise.resolve(ctx.params);
+  if (!(await requireAdmin(req))) return unauthorized();
+
+  const { id: formIdRaw } = await Promise.resolve(ctx.params);
+  const formId = String(formIdRaw ?? "").trim();
+
+  // Reduce surface: reject empty / absurdly long ids early
+  if (!formId || formId.length > 80) return badRequest("invalid form id");
+  // If your form ids are UUIDs (likely), we can cheaply filter nonsense inputs.
+  // If this ever blocks legit ids, remove this check.
+  if (!looksLikeUuid(formId)) return badRequest("invalid form id");
 
   const url = new URL(req.url);
   const limit = clampLimit(url.searchParams.get("limit"));
@@ -94,7 +120,6 @@ export async function GET(
       ? sql`${submissions.createdAt}::timestamp >= ${lowerBoundJstTs(range)}`
       : null;
 
-  // Base conditions array (no undefined)
   const conds: Array<ReturnType<typeof eq> | ReturnType<typeof sql>> = [
     eq(submissions.formId, formId),
   ];
@@ -133,7 +158,7 @@ export async function GET(
   const last = items[items.length - 1];
   const nextCursor =
     hasMore && last
-      ? `${new Date(last.created_at).toISOString()}__${last.id}`
+      ? `${new Date(last.created_at).toISOString()}__${String(last.id)}`
       : null;
 
   return NextResponse.json({ items, nextCursor });
