@@ -1,8 +1,16 @@
 // app/api/public/forms/[slug]/submit/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { forms, submissions } from "@/lib/db/schema";
+import {
+  forms,
+  submissions,
+  integrationBacklogConnections,
+  integrationBacklogFormSettings,
+} from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getAdminEmail } from "@/lib/auth/admin";
+import { buildIssueDescription, buildIssueSummary } from "@/lib/backlog/issue";
+import { createBacklogIssueBestEffort } from "@/lib/backlog/client";
 
 type Primitive = string | number | boolean | null;
 type Payload = Record<string, Primitive>;
@@ -42,7 +50,7 @@ export async function POST(
 
   // 1) form exists?
   const formRows = await db
-    .select({ id: forms.id })
+    .select({ id: forms.id, name: forms.name, slug: forms.slug })
     .from(forms)
     .where(eq(forms.slug, slug))
     .limit(1);
@@ -76,6 +84,59 @@ export async function POST(
     formId: form.id,
     payload,
   });
+
+  // 4) Best-effort Backlog issue creation (NEVER block submit response)
+  void (async () => {
+    try {
+      // Form-level setting enabled?
+      const [setting] = await db
+        .select({
+          enabled: integrationBacklogFormSettings.enabled,
+          projectKey: integrationBacklogFormSettings.projectKey,
+        })
+        .from(integrationBacklogFormSettings)
+        .where(eq(integrationBacklogFormSettings.formId, form.id))
+        .limit(1);
+
+      if (!setting || !setting.enabled) return;
+
+      const adminEmail = getAdminEmail();
+
+      const [conn] = await db
+        .select({
+          spaceUrl: integrationBacklogConnections.spaceUrl,
+          apiKey: integrationBacklogConnections.apiKey,
+          defaultProjectKey: integrationBacklogConnections.defaultProjectKey,
+        })
+        .from(integrationBacklogConnections)
+        .where(eq(integrationBacklogConnections.userEmail, adminEmail))
+        .limit(1);
+
+      if (!conn) return;
+
+      const projectKey = (setting.projectKey || conn.defaultProjectKey || "").trim();
+      if (!projectKey) return;
+
+      const summary = buildIssueSummary(form.name, form.slug);
+      const description = buildIssueDescription({
+        formName: form.name,
+        formSlug: form.slug,
+        submissionId,
+        payload,
+      });
+
+      await createBacklogIssueBestEffort({
+        spaceUrl: conn.spaceUrl,
+        apiKey: conn.apiKey,
+        projectKey,
+        summary,
+        description,
+      });
+    } catch {
+      // Neutral server log ONLY (no apiKey, no headers, no payload dump)
+      console.error("[public/submit][backlog] failed");
+    }
+  })();
 
   return NextResponse.json({ ok: true, submissionId });
 }

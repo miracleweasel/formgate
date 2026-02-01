@@ -55,3 +55,81 @@ export async function backlogGetJson<T>(
     return { ok: false, status: res.status, error: "invalid_json" };
   }
 }
+
+export async function backlogPostJson<T>(
+  cfg: BacklogClientConfig,
+  path: string,
+  body: Record<string, unknown>,
+  query?: Record<string, string | number | boolean | null | undefined>
+): Promise<{ ok: true; data: T } | { ok: false; status: number; error: string }> {
+  const url = makeBacklogApiUrl(cfg, path, query);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return { ok: false, status: 0, error: "network_error" };
+  }
+
+  if (!res.ok) {
+    return { ok: false, status: res.status, error: "http_error" };
+  }
+
+  try {
+    const data = (await res.json()) as T;
+    return { ok: true, data };
+  } catch {
+    // Backlog may sometimes return empty body. Still treat as ok-ish if status was 2xx.
+    return { ok: true, data: {} as T };
+  }
+}
+
+type BacklogProject = { id: number; projectKey: string; name: string };
+type BacklogIssueType = { id: number; name: string };
+
+export async function createBacklogIssueBestEffort(args: {
+  spaceUrl: string;
+  apiKey: string;
+  projectKey: string;
+  summary: string;
+  description: string;
+}) {
+  const cfg: BacklogClientConfig = { spaceUrl: args.spaceUrl, apiKey: args.apiKey };
+
+  // 1) Resolve projectId from projectKey
+  const projectsRes = await backlogGetJson<BacklogProject[]>(cfg, "/api/v2/projects");
+  if (!projectsRes.ok) return { ok: false as const, error: "projects_lookup_failed" };
+
+  const project = projectsRes.data.find((p) => p.projectKey === args.projectKey);
+  if (!project) return { ok: false as const, error: "project_not_found" };
+
+  // 2) Resolve issueTypeId (take the first one)
+  const typesRes = await backlogGetJson<BacklogIssueType[]>(
+    cfg,
+    `/api/v2/projects/${project.id}/issueTypes`
+  );
+  if (!typesRes.ok) return { ok: false as const, error: "issuetype_lookup_failed" };
+
+  const issueType = typesRes.data[0];
+  if (!issueType) return { ok: false as const, error: "no_issue_type" };
+
+  // 3) Create issue
+  // priorityId: 3 = Normal (common default on Backlog)
+  const createRes = await backlogPostJson<any>(cfg, "/api/v2/issues", {
+    projectId: project.id,
+    summary: args.summary,
+    description: args.description,
+    issueTypeId: issueType.id,
+    priorityId: 3,
+  });
+
+  if (!createRes.ok) return { ok: false as const, error: "issue_create_failed" };
+  return { ok: true as const };
+}
