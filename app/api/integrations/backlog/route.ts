@@ -13,6 +13,15 @@ function getCookieValue(cookieHeader: string, name: string) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
+async function isAdminSession(session: { email: string } | null) {
+  if (!session || !isSessionValid(session as any)) return false;
+
+  const adminEmail = await getAdminEmail();
+  if (!adminEmail) return false;
+
+  return normalizeEmail(session.email) === normalizeEmail(adminEmail);
+}
+
 async function requireAdmin(req: Request) {
   const cookieHeader = req.headers.get("cookie") ?? "";
   const raw = getCookieValue(cookieHeader, "fg_session");
@@ -20,7 +29,9 @@ async function requireAdmin(req: Request) {
   const session = await parseSessionCookieValue(raw);
   if (!session || !isSessionValid(session)) return false;
 
-  return normalizeEmail(session.email) === getAdminEmail();
+    const adminEmail = await getAdminEmail();
+    if (!adminEmail) return false;
+    return normalizeEmail(session.email) === normalizeEmail(adminEmail);
 }
 
 // GET: safe config only

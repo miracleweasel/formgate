@@ -93,6 +93,11 @@ export async function parseSessionCookieValue(
   }
 }
 
+export async function readSessionFromCookie(value: string | null) {
+  return parseSessionCookieValue(value);
+}
+
+
 export function isSessionValid(session: SessionPayload) {
   const now = Math.floor(Date.now() / 1000);
   return session.exp > now;

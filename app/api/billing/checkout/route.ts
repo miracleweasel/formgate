@@ -1,7 +1,11 @@
 // app/api/billing/checkout/route.ts
 import { NextResponse } from "next/server";
 import { createCheckoutUrl } from "@/lib/billing/lemonsqueezy";
-import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
+import {
+  parseSessionCookieValue,
+  isSessionValid,
+  SESSION_COOKIE_NAME,
+} from "@/lib/auth/session";
 import { getAdminEmail } from "@/lib/auth/admin";
 import { unauthorized, internalError } from "@/lib/http/errors";
 import { getClientIp, rateLimitOrNull } from "@/lib/http/rateLimit";
@@ -11,14 +15,17 @@ function getCookieValue(cookieHeader: string, name: string) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-async function requireAdmin(req: Request) {
+async function requireAdmin(req: Request): Promise<boolean> {
   const cookieHeader = req.headers.get("cookie") ?? "";
-  const raw = getCookieValue(cookieHeader, "fg_session");
+  const raw = getCookieValue(cookieHeader, SESSION_COOKIE_NAME);
 
   const session = await parseSessionCookieValue(raw);
   if (!session || !isSessionValid(session)) return false;
 
-  return session.email.toLowerCase() === getAdminEmail();
+  const adminEmail = await getAdminEmail();
+  if (!adminEmail) return false;
+
+  return session.email.toLowerCase() === adminEmail.toLowerCase();
 }
 
 export async function POST(req: Request) {
@@ -35,7 +42,8 @@ export async function POST(req: Request) {
   if (limited) return limited;
 
   try {
-    const email = process.env.ADMIN_EMAIL;
+    // On prend l'email admin “source de vérité” (même que l’auth)
+    const email = await getAdminEmail();
     if (!email || !email.trim()) {
       console.error("[billing/checkout] Missing ADMIN_EMAIL env var");
       return internalError();

@@ -32,7 +32,7 @@ function validatePayload(payload: unknown): payload is Payload {
   if (!isPlainObject(payload)) return false;
 
   const keys = Object.keys(payload);
-  if (keys.length === 0) return true; // autorisé (mais UI impose message)
+  if (keys.length === 0) return true;
   if (keys.length > 50) return false;
 
   for (const k of keys) {
@@ -40,6 +40,11 @@ function validatePayload(payload: unknown): payload is Payload {
     if (!isPrimitive(value)) return false;
   }
   return true;
+}
+
+function normalizeEmail(v: unknown): string | null {
+  const s = typeof v === "string" ? v.trim().toLowerCase() : "";
+  return s ? s : null;
 }
 
 export async function POST(
@@ -100,7 +105,10 @@ export async function POST(
 
       if (!setting || !setting.enabled) return;
 
-      const adminEmail = getAdminEmail();
+      // ✅ getAdminEmail() est async => await + normalisation string
+      const adminEmailRaw = await getAdminEmail();
+      const adminEmail = normalizeEmail(adminEmailRaw);
+      if (!adminEmail) return;
 
       const [conn] = await db
         .select({
@@ -114,7 +122,14 @@ export async function POST(
 
       if (!conn) return;
 
-      const projectKey = (setting.projectKey || conn.defaultProjectKey || "").trim();
+      // garde-fous (ne jamais throw sur champs manquants)
+      const spaceUrl = String(conn.spaceUrl ?? "").trim();
+      const apiKey = String(conn.apiKey ?? "").trim();
+      if (!spaceUrl || !apiKey) return;
+
+      const projectKey = String(
+        (setting.projectKey || conn.defaultProjectKey || "") ?? ""
+      ).trim();
       if (!projectKey) return;
 
       const summary = buildIssueSummary(form.name, form.slug);
@@ -126,8 +141,8 @@ export async function POST(
       });
 
       await createBacklogIssueBestEffort({
-        spaceUrl: conn.spaceUrl,
-        apiKey: conn.apiKey,
+        spaceUrl,
+        apiKey,
         projectKey,
         summary,
         description,

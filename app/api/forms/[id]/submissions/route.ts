@@ -4,7 +4,7 @@ import { and, desc, eq, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { submissions } from "@/lib/db/schema";
-import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
+import { parseSessionCookieValue, isSessionValid, SESSION_COOKIE_NAME } from "@/lib/auth/session";
 import { getAdminEmail } from "@/lib/auth/admin";
 import { unauthorized, badRequest } from "@/lib/http/errors";
 
@@ -22,15 +22,29 @@ function getCookieValue(cookieHeader: string, name: string) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
+async function isAdminSession(session: { email: string } | null) {
+  if (!session || !isSessionValid(session as any)) return false;
+
+  const adminEmail = await getAdminEmail();
+  if (!adminEmail) return false;
+
+  return session.email.toLowerCase() === adminEmail.toLowerCase();
+}
+
+
 async function requireAdmin(req: Request) {
   const cookieHeader = req.headers.get("cookie") ?? "";
-  const raw = getCookieValue(cookieHeader, "fg_session");
+  const raw = getCookieValue(cookieHeader, SESSION_COOKIE_NAME); // ou "fg_session" si tu n'importes pas la constante
 
   const session = await parseSessionCookieValue(raw);
   if (!session || !isSessionValid(session)) return false;
 
-  return session.email.toLowerCase() === getAdminEmail();
+  const adminEmail = await getAdminEmail();
+  if (!adminEmail) return false;
+
+  return session.email.toLowerCase() === adminEmail.toLowerCase();
 }
+
 
 export async function GET(
   req: Request,

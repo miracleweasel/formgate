@@ -1,12 +1,17 @@
 // lib/auth/admin.ts
-export function getAdminEmail(): string {
-  const v = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
-  if (!v) throw new Error("Missing ADMIN_EMAIL env var");
-  return v;
-}
+// Server-only helpers (ne jamais importer côté client)
 
-export function getAdminPassword(): string {
-  const v = process.env.ADMIN_PASSWORD ?? "";
-  if (!v) throw new Error("Missing ADMIN_PASSWORD env var");
-  return v;
-}
+export type GetAdminEmailFn = () => Promise<string | null | undefined>;
+export type GetAdminPasswordFn = () => Promise<string | null | undefined>;
+
+// IMPORTANT: ne JAMAIS mettre de secrets en dur dans le repo.
+// Pour MVP: on lit depuis env uniquement côté serveur.
+export const getAdminEmail: GetAdminEmailFn = async () => {
+  const v = process.env.ADMIN_EMAIL;
+  return v ? v.trim() : null;
+};
+
+export const getAdminPassword: GetAdminPasswordFn = async () => {
+  const v = process.env.ADMIN_PASSWORD;
+  return v ? v : null;
+};

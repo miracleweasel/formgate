@@ -3,26 +3,10 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { integrationBacklogConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
-import { getAdminEmail } from "@/lib/auth/admin";
 import { unauthorized, internalError } from "@/lib/http/errors";
 import { backlogGetJson } from "@/lib/backlog/client";
 import { normalizeEmail } from "@/lib/backlog/validators";
-
-function getCookieValue(cookieHeader: string, name: string) {
-  const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-  return m ? decodeURIComponent(m[1]) : null;
-}
-
-async function requireAdmin(req: Request) {
-  const cookieHeader = req.headers.get("cookie") ?? "";
-  const raw = getCookieValue(cookieHeader, "fg_session");
-
-  const session = await parseSessionCookieValue(raw);
-  if (!session || !isSessionValid(session)) return false;
-
-  return normalizeEmail(session.email) === getAdminEmail();
-}
+import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
 
 /**
  * POST /api/integrations/backlog/test
@@ -31,7 +15,7 @@ async function requireAdmin(req: Request) {
  * - returns neutral error on failure
  */
 export async function POST(req: Request) {
-  if (!(await requireAdmin(req))) return unauthorized();
+  if (!(await requireAdminFromRequest(req))) return unauthorized();
 
   try {
     const adminEmail = process.env.ADMIN_EMAIL;
@@ -62,12 +46,15 @@ export async function POST(req: Request) {
 
     if (!result.ok) {
       // neutral logs (no apiKey)
-      console.error("[integrations/backlog/test] failed", { status: result.status, error: result.error });
+      console.error("[integrations/backlog/test] failed", {
+        status: result.status,
+        error: result.error,
+      });
       return NextResponse.json({ error: "Unable to connect" }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (e) {
+  } catch (_e) {
     console.error("[integrations/backlog/test] error");
     return internalError();
   }

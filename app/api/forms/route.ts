@@ -27,7 +27,10 @@ async function requireAdmin(req: Request) {
   const session = await parseSessionCookieValue(raw);
   if (!session || !isSessionValid(session)) return false;
 
-  return session.email.toLowerCase() === getAdminEmail();
+  const adminEmail = await getAdminEmail();
+    if (!adminEmail) return false;
+    return session.email.toLowerCase() === adminEmail.toLowerCase();
+  
 }
 
 export async function GET(req: Request) {

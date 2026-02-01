@@ -1,28 +1,36 @@
 // app/(dashboard)/layout.tsx
-import { ReactNode } from "react";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
-import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getAdminEmail } from "@/lib/auth/admin";
+import {
+  isSessionValid,
+  parseSessionCookieValue,
+  SESSION_COOKIE_NAME,
+} from "@/lib/auth/session";
 
 export default async function DashboardLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
-  // Next 16: cookies() may be async depending on runtime; await is safe
-  const cookieStore = await cookies();
-  const raw = cookieStore.get("fg_session")?.value ?? null;
+  const cookieStore = await Promise.resolve(cookies());
 
-  const session = await parseSessionCookieValue(raw);
+  // ✅ bon nom de cookie: fg_session
+  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? null;
+
+  // ✅ parseSessionCookieValue est async
+  const session = await parseSessionCookieValue(sessionCookie);
+
+  const adminEmail = await getAdminEmail();
+
   const ok =
     !!session &&
     isSessionValid(session) &&
-    session.email.toLowerCase() === getAdminEmail();
+    !!adminEmail &&
+    session.email.toLowerCase() === adminEmail.toLowerCase();
 
   if (!ok) {
-    // No leakage: always redirect to login for dashboard area
     redirect("/login");
   }
 
