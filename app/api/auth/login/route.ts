@@ -6,35 +6,52 @@ import {
   sessionCookieOptions,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth/session";
+import { jsonError } from "@/lib/http/errors";
+import { getClientIp, rateLimitOrNull } from "@/lib/http/rateLimit";
 
 function safeLower(s: unknown) {
   return String(s ?? "").trim().toLowerCase();
 }
 
-export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({} as any));
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
 
-  const email = safeLower(body?.email);
-  const password = String(body?.password ?? "");
+export async function POST(req: Request) {
+  // Best-effort rate limiting (per instance). Still useful to reduce brute force.
+  const ip = getClientIp(req);
+  const limited = rateLimitOrNull({
+    key: `auth_login:${ip}`,
+    limit: 5,
+    windowMs: 10 * 60 * 1000,
+    addRetryAfter: true,
+  });
+  if (limited) return limited;
+
+  const raw = await req.json().catch(() => null);
+  const body = isPlainObject(raw) ? raw : {};
+
+  const email = safeLower(body.email);
+  const password = String(body.password ?? "");
 
   if (!email || !password) {
-    return NextResponse.json({ error: "email and password are required" }, { status: 400 });
+    return jsonError(400, "email and password are required");
   }
 
-  const adminEmail = getAdminEmail();
-  const adminPassword = getAdminPassword();
+  // ✅ FIX: getAdminEmail/getAdminPassword sont async
+  const adminEmail = (await getAdminEmail()) ?? "";
+  const adminPassword = (await getAdminPassword()) ?? "";
 
-  // MVP: comparaison simple (pas de secret en dur, uniquement env)
-  if (email !== adminEmail || password !== adminPassword) {
-    return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
+  // MVP: comparaison simple (env only), réponse neutre
+  if (email !== adminEmail.toLowerCase() || password !== adminPassword) {
+    return jsonError(401, "invalid credentials");
   }
 
-    const res = NextResponse.json({ ok: true });
-    res.cookies.set(
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set(
     SESSION_COOKIE_NAME,
     await makeSessionCookieValue(email),
     sessionCookieOptions()
-    );
-    return res;
-
+  );
+  return res;
 }

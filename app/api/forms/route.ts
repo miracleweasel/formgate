@@ -1,11 +1,19 @@
 // app/api/forms/route.ts
 import { NextResponse } from "next/server";
+import { desc } from "drizzle-orm";
+
 import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
-import { desc } from "drizzle-orm";
 import { slugify } from "@/lib/forms/utils";
 import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
 import { getAdminEmail } from "@/lib/auth/admin";
+import {
+  unauthorized,
+  internalError,
+  jsonError,
+} from "@/lib/http/errors";
+
+import { CreateFormSchema } from "@/lib/validation/forms";
 
 function getCookieValue(cookieHeader: string, name: string) {
   const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
@@ -15,39 +23,43 @@ function getCookieValue(cookieHeader: string, name: string) {
 async function requireAdmin(req: Request) {
   const cookieHeader = req.headers.get("cookie") ?? "";
   const raw = getCookieValue(cookieHeader, "fg_session");
+
   const session = await parseSessionCookieValue(raw);
   if (!session || !isSessionValid(session)) return false;
-  return session.email.toLowerCase() === getAdminEmail();
+
+  const adminEmail = await getAdminEmail();
+    if (!adminEmail) return false;
+    return session.email.toLowerCase() === adminEmail.toLowerCase();
+  
 }
 
-
-
 export async function GET(req: Request) {
-  if (!(await requireAdmin(req))) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  if (!(await requireAdmin(req))) return unauthorized();
+
   const rows = await db.select().from(forms).orderBy(desc(forms.createdAt));
   return NextResponse.json({ forms: rows });
 }
 
 export async function POST(req: Request) {
-  if (!(await requireAdmin(req))) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-  const body = await req.json().catch(() => ({} as any));
+  if (!(await requireAdmin(req))) return unauthorized();
 
-  const name = String(body?.name ?? "").trim();
-  const description = body?.description == null ? null : String(body.description);
-  const rawSlug = String(body?.slug ?? "").trim();
+  const rawBody = await req.json().catch(() => null);
 
-  if (!name) {
-    return NextResponse.json({ error: "name is required" }, { status: 400 });
+  const parsed = CreateFormSchema.safeParse(rawBody);
+
+  if (!parsed.success) {
+    const msg =
+      parsed.error.issues[0]?.message ?? "invalid input";
+    return jsonError(400, msg);
   }
 
-  const slug = rawSlug ? slugify(rawSlug) : slugify(name);
-  if (!slug) {
-    return NextResponse.json({ error: "slug is invalid" }, { status: 400 });
-  }
+  const { name, slug: rawSlug, description } = parsed.data;
+
+  const finalSlug = rawSlug
+    ? slugify(rawSlug)
+    : slugify(name);
+
+  if (!finalSlug) return jsonError(400, "slug is invalid");
 
   try {
     const id = crypto.randomUUID();
@@ -57,17 +69,18 @@ export async function POST(req: Request) {
       .values({
         id,
         name,
-        slug,
-        description: description && description.trim() ? description.trim() : null,
+        slug: finalSlug,
+        description: description || null,
       })
       .returning();
 
     return NextResponse.json({ form: created }, { status: 201 });
   } catch (e: any) {
     if (e?.code === "23505") {
-      return NextResponse.json({ error: "slug already exists" }, { status: 409 });
+      return jsonError(409, "slug already exists");
     }
-    console.error(e);
-    return NextResponse.json({ error: "internal error" }, { status: 500 });
+
+    console.error("[forms] create error", e);
+    return internalError();
   }
 }

@@ -1,75 +1,62 @@
 // app/api/forms/[id]/submissions/route.ts
 import { NextResponse } from "next/server";
 import { and, desc, eq, or, sql } from "drizzle-orm";
+
 import { db } from "@/lib/db";
 import { submissions } from "@/lib/db/schema";
-import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
+import { parseSessionCookieValue, isSessionValid, SESSION_COOKIE_NAME } from "@/lib/auth/session";
 import { getAdminEmail } from "@/lib/auth/admin";
+import { unauthorized, badRequest } from "@/lib/http/errors";
+
+import {
+  clampLimit,
+  looksLikeUuid,
+  parseCursor,
+  normalizeEmailQuery,
+  parseRange,
+  lowerBoundJstTs,
+} from "@/lib/validation/submissionsQuery";
 
 function getCookieValue(cookieHeader: string, name: string) {
   const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
   return m ? decodeURIComponent(m[1]) : null;
 }
 
+async function isAdminSession(session: { email: string } | null) {
+  if (!session || !isSessionValid(session as any)) return false;
+
+  const adminEmail = await getAdminEmail();
+  if (!adminEmail) return false;
+
+  return session.email.toLowerCase() === adminEmail.toLowerCase();
+}
+
+
 async function requireAdmin(req: Request) {
   const cookieHeader = req.headers.get("cookie") ?? "";
-  const raw = getCookieValue(cookieHeader, "fg_session");
-    const session = await parseSessionCookieValue(raw);
-    if (!session || !isSessionValid(session)) return false;
-    return session.email.toLowerCase() === getAdminEmail();
+  const raw = getCookieValue(cookieHeader, SESSION_COOKIE_NAME); // ou "fg_session" si tu n'importes pas la constante
 
+  const session = await parseSessionCookieValue(raw);
+  if (!session || !isSessionValid(session)) return false;
+
+  const adminEmail = await getAdminEmail();
+  if (!adminEmail) return false;
+
+  return session.email.toLowerCase() === adminEmail.toLowerCase();
 }
 
-
-function clampLimit(v: string | null): number {
-  if (v === null) return 50;
-  const n = Number(v);
-  if (!Number.isFinite(n)) return 50;
-  return Math.max(1, Math.min(50, Math.floor(n)));
-}
-
-function parseCursor(
-  raw: string | null
-): { createdAtIsoUtc: string; id: string } | null {
-  if (!raw) return null;
-  const [iso, id] = raw.split("__");
-  if (!iso || !id) return null;
-  return { createdAtIsoUtc: iso, id };
-}
-
-function normalizeEmailQuery(raw: string | null): string | null {
-  const v = String(raw ?? "").trim();
-  if (!v) return null;
-  return v.length > 200 ? v.slice(0, 200) : v;
-}
-
-type RangeKey = "today" | "7d" | "30d";
-function parseRange(raw: string | null): RangeKey | null {
-  const v = String(raw ?? "").trim().toLowerCase();
-  if (v === "today" || v === "7d" || v === "30d") return v;
-  return null;
-}
-
-function lowerBoundJstTs(range: RangeKey) {
-  const nowJstTs = sql`(now() AT TIME ZONE 'Asia/Tokyo')::timestamp`;
-
-  if (range === "today") {
-    return sql`date_trunc('day', ${nowJstTs})`;
-  }
-  if (range === "7d") {
-    return sql`${nowJstTs} - interval '7 days'`;
-  }
-  return sql`${nowJstTs} - interval '30 days'`;
-}
 
 export async function GET(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
-    if (!(await requireAdmin(req))) {
-        return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-  const { id: formId } = await Promise.resolve(ctx.params);
+  if (!(await requireAdmin(req))) return unauthorized();
+
+  const { id: formIdRaw } = await Promise.resolve(ctx.params);
+  const formId = String(formIdRaw ?? "").trim();
+
+  if (!formId || formId.length > 80) return badRequest("invalid form id");
+  if (!looksLikeUuid(formId)) return badRequest("invalid form id");
 
   const url = new URL(req.url);
   const limit = clampLimit(url.searchParams.get("limit"));
@@ -94,7 +81,6 @@ export async function GET(
       ? sql`${submissions.createdAt}::timestamp >= ${lowerBoundJstTs(range)}`
       : null;
 
-  // Base conditions array (no undefined)
   const conds: Array<ReturnType<typeof eq> | ReturnType<typeof sql>> = [
     eq(submissions.formId, formId),
   ];
@@ -133,7 +119,7 @@ export async function GET(
   const last = items[items.length - 1];
   const nextCursor =
     hasMore && last
-      ? `${new Date(last.created_at).toISOString()}__${last.id}`
+      ? `${new Date(last.created_at).toISOString()}__${String(last.id)}`
       : null;
 
   return NextResponse.json({ items, nextCursor });
