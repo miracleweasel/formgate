@@ -15,3 +15,7 @@ process.env.APP_ENC_KEY =
 // optionnel mais utile si certains modules lisent ça
 process.env.ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@example.com";
 process.env.APP_URL = process.env.APP_URL || "http://localhost:3000";
+
+// requis pour makeSessionCookieValue (session signing)
+process.env.AUTH_SECRET =
+  process.env.AUTH_SECRET || "test_secret_32_chars_minimum_ok";

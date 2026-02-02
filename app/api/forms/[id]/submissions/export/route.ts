@@ -6,6 +6,8 @@ import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { submissions } from "@/lib/db/schema";
 import { toCsv, formatJstForCsv } from "@/lib/csv";
+import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { unauthorized } from "@/lib/http/errors";
 
 type Params = { id: string };
 
@@ -29,6 +31,8 @@ export async function GET(
   req: Request,
   ctx: { params: Promise<Params> }
 ) {
+  if (!(await requireAdminFromRequest(req))) return unauthorized();
+
   const { id: formId } = await Promise.resolve(ctx.params);
 
   const url = new URL(req.url);

@@ -3,6 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { makeBacklogFormSettingsHandlers } from "@/lib/backlog/form-settings-handlers";
+import { makeSessionCookieValue, SESSION_COOKIE_NAME } from "@/lib/auth/session";
 
 const schema = {
   forms: { id: Symbol("forms.id") },
@@ -39,15 +40,16 @@ function makeDb(selectSteps: Array<any[]>) {
   };
 }
 
-test("GET -> 401 when not admin", async () => {
+test("GET -> 401 when no cookie", async () => {
   const db = makeDb([]);
   const { GET } = makeBacklogFormSettingsHandlers({
     db,
     schema,
     eq,
-    getAdminEmail: async () => null,
+    getAdminEmail: async () => "admin@example.com",
   });
 
+  // No cookie = unauthorized
   const res = await GET(new Request("http://localhost"), {
     params: Promise.resolve({ id: "x" }),
   });
@@ -60,14 +62,21 @@ test("GET -> 401 when not admin", async () => {
 
 test("GET -> 404 when form not found", async () => {
   const db = makeDb([[]]); // forms select => []
+  const adminEmail = "admin@example.com";
   const { GET } = makeBacklogFormSettingsHandlers({
     db,
     schema,
     eq,
-    getAdminEmail: async () => "admin@example.com",
+    getAdminEmail: async () => adminEmail,
   });
 
-  const res = await GET(new Request("http://localhost"), {
+  // Create valid session cookie
+  const cookie = await makeSessionCookieValue(adminEmail);
+  const req = new Request("http://localhost", {
+    headers: { cookie: `${SESSION_COOKIE_NAME}=${cookie}` },
+  });
+
+  const res = await GET(req, {
     params: Promise.resolve({ id: "x" }),
   });
 
@@ -79,14 +88,21 @@ test("GET -> 404 when form not found", async () => {
 test("GET -> ok defaults when connection missing", async () => {
   // 1) form exists, 2) connection missing
   const db = makeDb([[{ id: "x" }], []]);
+  const adminEmail = "admin@example.com";
   const { GET } = makeBacklogFormSettingsHandlers({
     db,
     schema,
     eq,
-    getAdminEmail: async () => "admin@example.com",
+    getAdminEmail: async () => adminEmail,
   });
 
-  const res = await GET(new Request("http://localhost"), {
+  // Create valid session cookie
+  const cookie = await makeSessionCookieValue(adminEmail);
+  const req = new Request("http://localhost", {
+    headers: { cookie: `${SESSION_COOKIE_NAME}=${cookie}` },
+  });
+
+  const res = await GET(req, {
     params: Promise.resolve({ id: "x" }),
   });
 

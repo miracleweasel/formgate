@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { unauthorized } from "@/lib/http/errors";
 
 function isUuid(v: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
@@ -10,7 +12,8 @@ function isUuid(v: string) {
 
 type Ctx = { params: Promise<{ id: string }> | { id: string } };
 
-export async function GET(_req: Request, ctx: Ctx) {
+export async function GET(req: Request, ctx: Ctx) {
+  if (!(await requireAdminFromRequest(req))) return unauthorized();
   const { id: raw } = await Promise.resolve(ctx.params);
   const id = String(raw ?? "").trim();
 
@@ -26,7 +29,8 @@ export async function GET(_req: Request, ctx: Ctx) {
   return NextResponse.json({ form: row });
 }
 
-export async function DELETE(_req: Request, ctx: Ctx) {
+export async function DELETE(req: Request, ctx: Ctx) {
+  if (!(await requireAdminFromRequest(req))) return unauthorized();
   const { id: raw } = await Promise.resolve(ctx.params);
   const id = String(raw ?? "").trim();
 

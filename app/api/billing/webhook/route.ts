@@ -1,14 +1,32 @@
 // app/api/billing/webhook/route.ts
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import crypto from "crypto";
 import { setSubscriptionStatus } from "@/lib/billing/subscription";
 
 /**
  * Lemon Squeezy webhook hardening:
+ * - HMAC-SHA256 signature verification (X-Signature header)
  * - Minimal payload validation (Zod)
  * - Never throw to client; respond { ok: true } on ignored/unknown events
- * - No signature verification here until we have the exact header name/format
  */
+
+function getWebhookSecret(): string | null {
+  const s = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
+  return s && s.trim() ? s.trim() : null;
+}
+
+function verifySignature(payload: string, signature: string, secret: string): boolean {
+  const hmac = crypto.createHmac("sha256", secret);
+  hmac.update(payload);
+  const digest = hmac.digest("hex");
+  // Timing-safe comparison to prevent timing attacks
+  try {
+    return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature));
+  } catch {
+    return false;
+  }
+}
 
 const WebhookSchema = z
   .object({
@@ -49,8 +67,45 @@ function ok() {
   return NextResponse.json({ ok: true });
 }
 
+function forbidden() {
+  return NextResponse.json({ error: "forbidden" }, { status: 403 });
+}
+
 export async function POST(req: Request) {
-  const raw = await req.json().catch(() => null);
+  // 1) Verify webhook signature
+  const secret = getWebhookSecret();
+  if (!secret) {
+    console.error("[billing/webhook] Missing LEMONSQUEEZY_WEBHOOK_SECRET");
+    return forbidden();
+  }
+
+  const signature = req.headers.get("x-signature") ?? "";
+  if (!signature) {
+    console.error("[billing/webhook] Missing X-Signature header");
+    return forbidden();
+  }
+
+  // Read raw body for signature verification
+  const rawBody = await req.text().catch(() => "");
+  if (!rawBody) {
+    console.error("[billing/webhook] Empty body");
+    return forbidden();
+  }
+
+  if (!verifySignature(rawBody, signature, secret)) {
+    console.error("[billing/webhook] Invalid signature");
+    return forbidden();
+  }
+
+  // 2) Parse JSON after signature verification
+  let raw: unknown;
+  try {
+    raw = JSON.parse(rawBody);
+  } catch {
+    console.error("[billing/webhook] Invalid JSON");
+    return ok();
+  }
+
   const parsed = WebhookSchema.safeParse(raw);
 
   if (!parsed.success) {

@@ -1,4 +1,10 @@
 // lib/backlog/form-settings-handlers.ts
+import {
+  parseSessionCookieValue,
+  isSessionValid,
+  SESSION_COOKIE_NAME,
+} from "@/lib/auth/session";
+
 type DbLike = {
   select: (...args: any[]) => any;
   insert: (...args: any[]) => any;
@@ -38,10 +44,35 @@ function normalizeProjectKey(v: unknown) {
   return s.replace(/\s+/g, "").toUpperCase();
 }
 
-async function requireAdminOr401(getAdminEmail: GetAdminEmailFn) {
+function getCookieValue(cookieHeader: string, name: string) {
+  const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+/**
+ * Validates both:
+ * 1. Request has valid session cookie
+ * 2. Session email matches admin email
+ */
+async function requireAdminOr401(req: Request, getAdminEmail: GetAdminEmailFn) {
   try {
-    const email = await getAdminEmail();
-    if (!email) return { ok: false as const, res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
+    const cookieHeader = req.headers.get("cookie") ?? "";
+    const raw = getCookieValue(cookieHeader, SESSION_COOKIE_NAME);
+
+    const session = await parseSessionCookieValue(raw);
+    if (!session || !isSessionValid(session)) {
+      return { ok: false as const, res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
+    }
+
+    const adminEmail = await getAdminEmail();
+    if (!adminEmail) {
+      return { ok: false as const, res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
+    }
+
+    if (session.email.toLowerCase() !== adminEmail.toLowerCase()) {
+      return { ok: false as const, res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
+    }
+
     return { ok: true as const, res: null as unknown as Response };
   } catch {
     return { ok: false as const, res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
@@ -57,8 +88,8 @@ export function makeBacklogFormSettingsHandlers(deps: {
   const { db, schema, eq, getAdminEmail } = deps;
   const { forms, integrationBacklogConnections, integrationBacklogFormSettings } = schema;
 
-  async function GET(_req: Request, ctx: Ctx) {
-    const guard = await requireAdminOr401(getAdminEmail);
+  async function GET(req: Request, ctx: Ctx) {
+    const guard = await requireAdminOr401(req, getAdminEmail);
     if (!guard.ok) return guard.res;
 
     const { id: raw } = await Promise.resolve(ctx.params as any);
@@ -116,7 +147,7 @@ export function makeBacklogFormSettingsHandlers(deps: {
   }
 
   async function PUT(req: Request, ctx: Ctx) {
-    const guard = await requireAdminOr401(getAdminEmail);
+    const guard = await requireAdminOr401(req, getAdminEmail);
     if (!guard.ok) return guard.res;
 
     const { id: raw } = await Promise.resolve(ctx.params as any);
