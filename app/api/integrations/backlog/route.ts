@@ -7,6 +7,7 @@ import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
 import { getAdminEmail } from "@/lib/auth/admin";
 import { unauthorized, internalError } from "@/lib/http/errors";
 import { backlogConnectionUpsertSchema, normalizeEmail, safeBoolHasApiKey } from "@/lib/backlog/validators";
+import { encryptString } from "@/lib/crypto";
 
 function getCookieValue(cookieHeader: string, name: string) {
   const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
@@ -109,12 +110,15 @@ export async function POST(req: Request) {
 
     const found = existing[0];
 
+    // Encrypt API key before storing
+    const encryptedApiKey = encryptString(parsed.data.apiKey);
+
     if (found) {
       await db
         .update(integrationBacklogConnections)
         .set({
           spaceUrl: parsed.data.spaceUrl,
-          apiKey: parsed.data.apiKey,
+          apiKey: encryptedApiKey,
           defaultProjectKey: parsed.data.defaultProjectKey,
           // updatedAt auto via $onUpdate, but that's runtime; drizzle update won't trigger it automatically.
           updatedAt: new Date(),
@@ -125,7 +129,7 @@ export async function POST(req: Request) {
         id: crypto.randomUUID(),
         userEmail: email,
         spaceUrl: parsed.data.spaceUrl,
-        apiKey: parsed.data.apiKey,
+        apiKey: encryptedApiKey,
         defaultProjectKey: parsed.data.defaultProjectKey,
       });
     }

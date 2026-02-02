@@ -64,7 +64,7 @@ export const integrationBacklogConnections = pgTable(
     userEmail: text("user_email").notNull(),
 
     spaceUrl: text("space_url").notNull(),
-    apiKey: text("api_key").notNull(), // MVP: stored in clear, NEVER returned to client
+    apiKey: text("api_key").notNull(), // AES-256-GCM encrypted, NEVER returned to client
     defaultProjectKey: text("default_project_key").notNull(),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -7,6 +7,7 @@ import { unauthorized, internalError } from "@/lib/http/errors";
 import { backlogGetJson } from "@/lib/backlog/client";
 import { normalizeEmail } from "@/lib/backlog/validators";
 import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { decryptString } from "@/lib/crypto";
 
 /**
  * POST /api/integrations/backlog/test
@@ -39,8 +40,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unable to connect" }, { status: 400 });
     }
 
+    // Decrypt API key before use
+    let apiKey: string;
+    try {
+      apiKey = decryptString(cfg.apiKey);
+    } catch {
+      console.error("[integrations/backlog/test] decrypt failed");
+      return NextResponse.json({ error: "Unable to connect" }, { status: 400 });
+    }
+
     const result = await backlogGetJson<{ id: number; name: string; mailAddress?: string }>(
-      { spaceUrl: cfg.spaceUrl, apiKey: cfg.apiKey },
+      { spaceUrl: cfg.spaceUrl, apiKey },
       "/api/v2/users/myself"
     );
 

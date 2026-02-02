@@ -11,6 +11,8 @@ import { eq } from "drizzle-orm";
 import { getAdminEmail } from "@/lib/auth/admin";
 import { buildIssueDescription, buildIssueSummary } from "@/lib/backlog/issue";
 import { createBacklogIssueBestEffort } from "@/lib/backlog/client";
+import { decryptString } from "@/lib/crypto";
+import { getClientIp, rateLimitOrNull } from "@/lib/http/rateLimit";
 
 type Primitive = string | number | boolean | null;
 type Payload = Record<string, Primitive>;
@@ -51,6 +53,16 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  // Rate limit: 10 requests per minute per IP (anti-spam)
+  const ip = getClientIp(req);
+  const limited = rateLimitOrNull({
+    key: `public_submit:${ip}`,
+    limit: 10,
+    windowMs: 60 * 1000, // 1 minute
+    addRetryAfter: true,
+  });
+  if (limited) return limited;
+
   const { slug } = await Promise.resolve(params);
 
   // 1) form exists?
@@ -124,8 +136,17 @@ export async function POST(
 
       // garde-fous (ne jamais throw sur champs manquants)
       const spaceUrl = String(conn.spaceUrl ?? "").trim();
-      const apiKey = String(conn.apiKey ?? "").trim();
-      if (!spaceUrl || !apiKey) return;
+      const encryptedApiKey = String(conn.apiKey ?? "").trim();
+      if (!spaceUrl || !encryptedApiKey) return;
+
+      // Decrypt API key
+      let apiKey: string;
+      try {
+        apiKey = decryptString(encryptedApiKey);
+      } catch {
+        console.error("[public/submit][backlog] decrypt failed");
+        return;
+      }
 
       const projectKey = String(
         (setting.projectKey || conn.defaultProjectKey || "") ?? ""
