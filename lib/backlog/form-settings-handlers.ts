@@ -4,6 +4,7 @@ import {
   isSessionValid,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth/session";
+import { getCookieValue } from "@/lib/auth/requireAdmin";
 
 type DbLike = {
   select: (...args: any[]) => any;
@@ -42,11 +43,6 @@ function normalizeProjectKey(v: unknown) {
   const s = typeof v === "string" ? v.trim() : "";
   if (!s) return null;
   return s.replace(/\s+/g, "").toUpperCase();
-}
-
-function getCookieValue(cookieHeader: string, name: string) {
-  const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-  return m ? decodeURIComponent(m[1]) : null;
 }
 
 /**

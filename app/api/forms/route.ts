@@ -5,43 +5,19 @@ import { desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
 import { slugify } from "@/lib/forms/utils";
-import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
-import { getAdminEmail } from "@/lib/auth/admin";
-import {
-  unauthorized,
-  internalError,
-  jsonError,
-} from "@/lib/http/errors";
-
+import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { unauthorized, internalError, jsonError } from "@/lib/http/errors";
 import { CreateFormSchema } from "@/lib/validation/forms";
 
-function getCookieValue(cookieHeader: string, name: string) {
-  const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-  return m ? decodeURIComponent(m[1]) : null;
-}
-
-async function requireAdmin(req: Request) {
-  const cookieHeader = req.headers.get("cookie") ?? "";
-  const raw = getCookieValue(cookieHeader, "fg_session");
-
-  const session = await parseSessionCookieValue(raw);
-  if (!session || !isSessionValid(session)) return false;
-
-  const adminEmail = await getAdminEmail();
-    if (!adminEmail) return false;
-    return session.email.toLowerCase() === adminEmail.toLowerCase();
-  
-}
-
 export async function GET(req: Request) {
-  if (!(await requireAdmin(req))) return unauthorized();
+  if (!(await requireAdminFromRequest(req))) return unauthorized();
 
   const rows = await db.select().from(forms).orderBy(desc(forms.createdAt));
   return NextResponse.json({ forms: rows });
 }
 
 export async function POST(req: Request) {
-  if (!(await requireAdmin(req))) return unauthorized();
+  if (!(await requireAdminFromRequest(req))) return unauthorized();
 
   const rawBody = await req.json().catch(() => null);
 

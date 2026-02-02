@@ -2,7 +2,8 @@
 import { parseSessionCookieValue, isSessionValid, SESSION_COOKIE_NAME } from "@/lib/auth/session";
 import { getAdminEmail } from "@/lib/auth/admin";
 
-function getCookieValue(cookieHeader: string, name: string) {
+/** Parse a single cookie value from a cookie header string */
+export function getCookieValue(cookieHeader: string, name: string): string | null {
   const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
   return m ? decodeURIComponent(m[1]) : null;
 }

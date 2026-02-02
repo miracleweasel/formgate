@@ -3,41 +3,14 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { integrationBacklogConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { parseSessionCookieValue, isSessionValid } from "@/lib/auth/session";
-import { getAdminEmail } from "@/lib/auth/admin";
+import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
 import { unauthorized, internalError } from "@/lib/http/errors";
 import { backlogConnectionUpsertSchema, normalizeEmail, safeBoolHasApiKey } from "@/lib/backlog/validators";
 import { encryptString } from "@/lib/crypto";
 
-function getCookieValue(cookieHeader: string, name: string) {
-  const m = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-  return m ? decodeURIComponent(m[1]) : null;
-}
-
-async function isAdminSession(session: { email: string } | null) {
-  if (!session || !isSessionValid(session as any)) return false;
-
-  const adminEmail = await getAdminEmail();
-  if (!adminEmail) return false;
-
-  return normalizeEmail(session.email) === normalizeEmail(adminEmail);
-}
-
-async function requireAdmin(req: Request) {
-  const cookieHeader = req.headers.get("cookie") ?? "";
-  const raw = getCookieValue(cookieHeader, "fg_session");
-
-  const session = await parseSessionCookieValue(raw);
-  if (!session || !isSessionValid(session)) return false;
-
-    const adminEmail = await getAdminEmail();
-    if (!adminEmail) return false;
-    return normalizeEmail(session.email) === normalizeEmail(adminEmail);
-}
-
 // GET: safe config only
 export async function GET(req: Request) {
-  if (!(await requireAdmin(req))) return unauthorized();
+  if (!(await requireAdminFromRequest(req))) return unauthorized();
 
   try {
     const adminEmail = process.env.ADMIN_EMAIL;
@@ -79,7 +52,7 @@ export async function GET(req: Request) {
 
 // POST: upsert config (admin-only)
 export async function POST(req: Request) {
-  if (!(await requireAdmin(req))) return unauthorized();
+  if (!(await requireAdminFromRequest(req))) return unauthorized();
 
   let body: unknown;
   try {
