@@ -8,6 +8,7 @@ import {
   parseSessionCookieValue,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth/session";
+import DashboardHeader from "./DashboardHeader";
 
 export default async function DashboardLayout({
   children,
@@ -34,5 +35,10 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader email={session.email} />
+      <main>{children}</main>
+    </div>
+  );
 }

@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { t } from "@/lib/i18n";
 
 type SubStatus = "active" | "inactive";
 
@@ -30,37 +31,51 @@ export default function BillingPage() {
     if (data?.url) window.location.href = data.url;
   }
 
-  return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-xl font-semibold">Billing</h1>
+  function getStatusLabel() {
+    if (loading) return t.common.loading;
+    return status === "active" ? t.billing.starter : t.billing.free;
+  }
 
-      <div className="rounded-md border p-3 text-sm">
+  return (
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <h1 className="text-xl font-semibold">{t.billing.title}</h1>
+
+      <div className="rounded-md border bg-white p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-medium">Status</div>
-            <div className="text-gray-600">
-              {loading ? "Loading…" : status === "active" ? "Active" : "Inactive"}
-            </div>
+            <div className="text-xs text-gray-500">{t.billing.currentPlan}</div>
+            <div className="text-lg font-medium">{getStatusLabel()}</div>
           </div>
 
           <button
             onClick={refreshStatus}
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            disabled={loading}
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
           >
-            Refresh
+            {loading ? "..." : "↻"}
           </button>
         </div>
       </div>
 
       {status !== "active" ? (
-        <button
-          onClick={subscribe}
-          className="rounded-md bg-black px-4 py-2 text-sm text-white"
-        >
-          Subscribe
-        </button>
+        <div className="rounded-md border bg-white p-4 space-y-4">
+          <div>
+            <div className="font-medium">{t.billing.starter}</div>
+            <div className="text-sm text-gray-600">
+              {t.landing.pricing.starter.features.join(" · ")}
+            </div>
+          </div>
+          <button
+            onClick={subscribe}
+            className="rounded-md bg-black px-4 py-2 text-sm text-white"
+          >
+            {t.billing.upgrade}
+          </button>
+        </div>
       ) : (
-        <div className="text-sm text-gray-600">✅ Subscription active.</div>
+        <div className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+          {t.billing.starter} - {t.integrations.backlog.enabled}
+        </div>
       )}
     </div>
   );
