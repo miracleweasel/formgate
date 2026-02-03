@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t } from "@/lib/i18n";
 
 export default function NewFormPage() {
   const router = useRouter();
@@ -22,8 +23,8 @@ export default function NewFormPage() {
     const s = slug.trim();
     const d = description.trim();
 
-    if (!n) return setError("Name is required.");
-    if (!s) return setError("Slug is required.");
+    if (!n) return setError(t.forms.nameRequired);
+    if (!s) return setError(t.forms.slugRequired);
 
     setSubmitting(true);
     try {
@@ -38,9 +39,8 @@ export default function NewFormPage() {
       });
 
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Create failed");
+      if (!res.ok) throw new Error(data?.error || t.forms.createFailed);
 
-      // si ton API renvoie { form: { id } } on redirige vers le détail
       const id = data?.form?.id;
       if (id) router.push(`/forms/${id}`);
       else router.push("/forms");
@@ -55,16 +55,16 @@ export default function NewFormPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">New form</h1>
+        <h1 className="text-xl font-semibold">{t.forms.createTitle}</h1>
         <Link href="/forms" className="rounded-md border px-3 py-2 text-sm">
-          Back
+          {t.common.back}
         </Link>
       </div>
 
       <form onSubmit={onSubmit} className="rounded-md border p-4 space-y-4">
         <div className="space-y-1">
           <label className="text-sm font-medium" htmlFor="name">
-            Name <span className="text-red-600">*</span>
+            {t.forms.formName} <span className="text-red-600">*</span>
           </label>
           <input
             id="name"
@@ -72,13 +72,14 @@ export default function NewFormPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={submitting}
+            placeholder={t.forms.formNamePlaceholder}
             required
           />
         </div>
 
         <div className="space-y-1">
           <label className="text-sm font-medium" htmlFor="slug">
-            Slug <span className="text-red-600">*</span>
+            {t.forms.slug} <span className="text-red-600">*</span>
           </label>
           <input
             id="slug"
@@ -86,15 +87,15 @@ export default function NewFormPage() {
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             disabled={submitting}
-            placeholder="example: demo"
+            placeholder={t.forms.slugPlaceholder}
             required
           />
-          <p className="text-xs text-gray-500">Used in /f/&lt;slug&gt;</p>
+          <p className="text-xs text-gray-500">{t.forms.slugHint}</p>
         </div>
 
         <div className="space-y-1">
           <label className="text-sm font-medium" htmlFor="description">
-            Description (optional)
+            {t.forms.description} ({t.common.optional})
           </label>
           <textarea
             id="description"
@@ -102,6 +103,7 @@ export default function NewFormPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={submitting}
+            placeholder={t.forms.descriptionPlaceholder}
           />
         </div>
 
@@ -112,7 +114,7 @@ export default function NewFormPage() {
           disabled={submitting}
           className="rounded bg-black px-4 py-2 text-white text-sm disabled:opacity-50"
         >
-          {submitting ? "Creating..." : "Create"}
+          {submitting ? t.forms.creating : t.common.create}
         </button>
       </form>
     </div>

@@ -3,6 +3,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { t } from "@/lib/i18n";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -32,13 +33,21 @@ export default function LoginClient() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data?.error ?? "login failed");
+        // Map API errors to localized messages
+        const errorKey = data?.error;
+        if (errorKey === "invalid credentials") {
+          setError(t.errors.invalidCredentials);
+        } else if (errorKey === "rate_limited") {
+          setError(t.errors.rateLimited);
+        } else {
+          setError(t.errors.generic);
+        }
         return;
       }
 
       router.replace(next);
     } catch {
-      setError("network error");
+      setError(t.errors.network);
     } finally {
       setBusy(false);
     }
@@ -47,12 +56,12 @@ export default function LoginClient() {
   return (
     <div className="min-h-[calc(100vh-0px)] flex items-center justify-center p-6">
       <div className="w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold">Login</h1>
-        <p className="mt-1 text-sm text-gray-600">Admin access</p>
+        <h1 className="text-xl font-semibold">{t.auth.loginTitle}</h1>
+        <p className="mt-1 text-sm text-gray-600">{t.auth.loginSubtitle}</p>
 
         <form className="mt-6 space-y-3" onSubmit={onSubmit}>
           <div className="space-y-1">
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium">{t.auth.email}</label>
             <input
               className="w-full rounded-md border px-3 py-2 text-sm"
               type="email"
@@ -64,7 +73,7 @@ export default function LoginClient() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium">Password</label>
+            <label className="text-sm font-medium">{t.auth.password}</label>
             <input
               className="w-full rounded-md border px-3 py-2 text-sm"
               type="password"
@@ -85,7 +94,7 @@ export default function LoginClient() {
             className="w-full rounded-md bg-black px-3 py-2 text-sm text-white disabled:opacity-60"
             disabled={busy}
           >
-            {busy ? "..." : "Sign in"}
+            {busy ? t.auth.signingIn : t.auth.signIn}
           </button>
         </form>
       </div>

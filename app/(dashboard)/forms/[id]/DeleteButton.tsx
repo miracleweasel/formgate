@@ -3,13 +3,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { t } from "@/lib/i18n";
 
 export default function DeleteButton({ id }: { id: string }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
 
   async function onDelete() {
-    if (!confirm("Delete this form?")) return;
+    if (!confirm(t.forms.deleteConfirm)) return;
 
     setDeleting(true);
     const res = await fetch(`/api/forms/${id}`, { method: "DELETE" });
@@ -17,7 +18,7 @@ export default function DeleteButton({ id }: { id: string }) {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data?.error ?? "Error");
+      alert(data?.error ?? t.errors.generic);
       return;
     }
 
@@ -31,7 +32,7 @@ export default function DeleteButton({ id }: { id: string }) {
       disabled={deleting}
       className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 disabled:opacity-60"
     >
-      {deleting ? "Deleting…" : "Delete"}
+      {deleting ? t.forms.deleting : t.common.delete}
     </button>
   );
 }

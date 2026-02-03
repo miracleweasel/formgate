@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { t } from "@/lib/i18n";
 
 type Props = {
   formId: string;
@@ -67,7 +68,7 @@ export default function BacklogSettingsClient({ formId }: Props) {
 
       // ✅ garde anti JSON bizarre
       if (!data || typeof data !== "object") {
-        setMsg({ kind: "err", text: "Invalid response." });
+        setMsg({ kind: "err", text: t.integrations.backlog.invalidResponse });
         return;
       }
 
@@ -75,13 +76,13 @@ export default function BacklogSettingsClient({ formId }: Props) {
       const typed = data as GetResp;
 
       if (!res.ok) {
-        setMsg({ kind: "err", text: "Failed to load settings." });
+        setMsg({ kind: "err", text: t.integrations.backlog.loadFailed });
         return;
       }
 
       // ✅ narrowing TS (discriminant)
       if (typed.ok !== true) {
-        setMsg({ kind: "err", text: typed.error || "Failed to load settings." });
+        setMsg({ kind: "err", text: typed.error || t.integrations.backlog.loadFailed });
         return;
       }
 
@@ -91,7 +92,7 @@ export default function BacklogSettingsClient({ formId }: Props) {
       setEnabled(!!typed.settings.enabled);
       setProjectKeyOverride(typed.settings.projectKey ?? "");
     } catch {
-      setMsg({ kind: "err", text: "Network error." });
+      setMsg({ kind: "err", text: t.errors.network });
     } finally {
       setLoading(false);
     }
@@ -123,10 +124,10 @@ export default function BacklogSettingsClient({ formId }: Props) {
 
       if (!data || typeof data !== "object") {
         if (!res.ok) {
-          setMsg({ kind: "err", text: "Save failed." });
+          setMsg({ kind: "err", text: t.integrations.backlog.saveFailed });
           return;
         }
-        setMsg({ kind: "ok", text: "Saved." });
+        setMsg({ kind: "ok", text: t.integrations.backlog.saved });
         await load();
         return;
       }
@@ -136,15 +137,15 @@ export default function BacklogSettingsClient({ formId }: Props) {
       if (!res.ok) {
         setMsg({
           kind: "err",
-          text: typeof obj.error === "string" ? obj.error : "Save failed.",
+          text: typeof obj.error === "string" ? obj.error : t.integrations.backlog.saveFailed,
         });
         return;
       }
 
-      setMsg({ kind: "ok", text: "Saved." });
+      setMsg({ kind: "ok", text: t.integrations.backlog.saved });
       await load();
     } catch {
-      setMsg({ kind: "err", text: "Network error." });
+      setMsg({ kind: "err", text: t.errors.network });
     } finally {
       setSaving(false);
     }
@@ -166,10 +167,10 @@ export default function BacklogSettingsClient({ formId }: Props) {
 
       if (!data || typeof data !== "object") {
         if (!res.ok) {
-          setTestMsg({ kind: "err", text: "Test failed." });
+          setTestMsg({ kind: "err", text: t.integrations.backlog.testFailed });
           return;
         }
-        setTestMsg({ kind: "ok", text: "Connection OK." });
+        setTestMsg({ kind: "ok", text: t.integrations.backlog.connectionOk });
         return;
       }
 
@@ -178,14 +179,14 @@ export default function BacklogSettingsClient({ formId }: Props) {
       if (!res.ok) {
         setTestMsg({
           kind: "err",
-          text: typeof obj.error === "string" ? obj.error : "Test failed.",
+          text: typeof obj.error === "string" ? obj.error : t.integrations.backlog.testFailed,
         });
         return;
       }
 
-      setTestMsg({ kind: "ok", text: "Connection OK." });
+      setTestMsg({ kind: "ok", text: t.integrations.backlog.connectionOk });
     } catch {
-      setTestMsg({ kind: "err", text: "Network error." });
+      setTestMsg({ kind: "err", text: t.errors.network });
     } finally {
       setTesting(false);
     }
@@ -195,7 +196,7 @@ export default function BacklogSettingsClient({ formId }: Props) {
   if (loading) {
     return (
       <div className="rounded-md border p-4 text-sm text-gray-600">
-        Loading…
+        {t.common.loading}
       </div>
     );
   }
@@ -204,15 +205,15 @@ export default function BacklogSettingsClient({ formId }: Props) {
     <div className="space-y-6">
       {/* Connection info (safe) */}
       <section className="rounded-md border p-4 space-y-2">
-        <h2 className="text-lg font-semibold">Connection (safe)</h2>
+        <h2 className="text-lg font-semibold">{t.integrations.backlog.connectionSafe}</h2>
 
         <div className="text-sm">
-          <div className="text-xs text-gray-500">Space URL</div>
+          <div className="text-xs text-gray-500">{t.integrations.backlog.spaceUrl}</div>
           <div className="break-all">{spaceUrl || "—"}</div>
         </div>
 
         <div className="text-sm">
-          <div className="text-xs text-gray-500">Default project key</div>
+          <div className="text-xs text-gray-500">{t.integrations.backlog.defaultProjectKey}</div>
           <div>{defaultProjectKey || "—"}</div>
         </div>
 
@@ -223,7 +224,7 @@ export default function BacklogSettingsClient({ formId }: Props) {
             disabled={testing}
             className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
           >
-            {testing ? "Testing…" : "Test connection"}
+            {testing ? t.integrations.backlog.testing : t.integrations.backlog.testConnection}
           </button>
 
           {testMsg && (
@@ -242,7 +243,7 @@ export default function BacklogSettingsClient({ formId }: Props) {
 
       {/* Form settings */}
       <section className="rounded-md border p-4 space-y-4">
-        <h2 className="text-lg font-semibold">Form settings</h2>
+        <h2 className="text-lg font-semibold">{t.integrations.backlog.formSettings}</h2>
 
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -250,23 +251,23 @@ export default function BacklogSettingsClient({ formId }: Props) {
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
           />
-          Enable for this form
+          {t.integrations.backlog.enableForForm}
         </label>
 
         <div className="space-y-1">
           <div className="text-xs text-gray-500">
-            Project key override (optional)
+            {t.integrations.backlog.projectKeyOverride}
           </div>
 
           <input
             value={projectKeyOverride}
             onChange={(e) => setProjectKeyOverride(e.target.value)}
-            placeholder="e.g. FG"
+            placeholder={t.integrations.backlog.projectKeyPlaceholder}
             className="w-full rounded-md border px-3 py-2 text-sm"
           />
 
           <div className="text-xs text-gray-500">
-            Effective project key:{" "}
+            {t.integrations.backlog.effectiveProjectKey}:{" "}
             <span className="font-medium">{effectiveProjectKey || "—"}</span>
           </div>
         </div>
@@ -278,7 +279,7 @@ export default function BacklogSettingsClient({ formId }: Props) {
             disabled={saving}
             className="rounded-md bg-black px-3 py-2 text-sm text-white hover:opacity-90 disabled:opacity-60"
           >
-            {saving ? "Saving…" : "Save"}
+            {saving ? t.integrations.backlog.saving : t.common.save}
           </button>
 
           {msg && (
@@ -295,7 +296,7 @@ export default function BacklogSettingsClient({ formId }: Props) {
         </div>
 
         <div className="text-xs text-gray-500">
-          Note: apiKey is never exposed. All Backlog actions are server-side.
+          {t.integrations.backlog.apiKeyNote}
         </div>
       </section>
     </div>

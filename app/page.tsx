@@ -1,65 +1,163 @@
-import Image from "next/image";
+// app/page.tsx
+import Link from "next/link";
+import { t } from "@/lib/i18n";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="border-b">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="font-semibold text-lg">{t.common.appName}</div>
+          <Link
+            href="/login"
+            className="text-sm font-medium hover:underline"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {t.landing.hero.ctaLogin}
+          </Link>
         </div>
-      </main>
+      </header>
+
+      {/* Hero */}
+      <section className="max-w-5xl mx-auto px-6 py-24 text-center">
+        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          {t.landing.hero.title}
+        </h1>
+        <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
+          {t.landing.hero.subtitle}
+        </p>
+        <div className="mt-10 flex items-center justify-center gap-4">
+          <Link
+            href="/login"
+            className="rounded-md bg-black px-6 py-3 text-sm font-medium text-white hover:bg-gray-800"
+          >
+            {t.landing.hero.cta}
+          </Link>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="bg-gray-50 py-24">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-center mb-16">
+            {t.landing.features.title}
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-lg p-6 shadow-sm border">
+              <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold mb-4">
+                1
+              </div>
+              <h3 className="font-semibold text-lg mb-2">
+                {t.landing.features.step1.title}
+              </h3>
+              <p className="text-gray-600 text-sm">
+                {t.landing.features.step1.description}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-lg p-6 shadow-sm border">
+              <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold mb-4">
+                2
+              </div>
+              <h3 className="font-semibold text-lg mb-2">
+                {t.landing.features.step2.title}
+              </h3>
+              <p className="text-gray-600 text-sm">
+                {t.landing.features.step2.description}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-lg p-6 shadow-sm border">
+              <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold mb-4">
+                3
+              </div>
+              <h3 className="font-semibold text-lg mb-2">
+                {t.landing.features.step3.title}
+              </h3>
+              <p className="text-gray-600 text-sm">
+                {t.landing.features.step3.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-24">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-center mb-16">
+            {t.landing.pricing.title}
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Free */}
+            <div className="rounded-lg border p-6">
+              <h3 className="font-semibold text-lg">{t.landing.pricing.free.name}</h3>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">{t.landing.pricing.free.price}</span>
+                <span className="text-gray-600">{t.landing.pricing.free.period}</span>
+              </div>
+              <ul className="mt-6 space-y-3">
+                {t.landing.pricing.free.features.map((feature, i) => (
+                  <li key={i} className="text-sm text-gray-600 flex items-center gap-2">
+                    <span className="text-green-600">&#10003;</span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Starter */}
+            <div className="rounded-lg border-2 border-black p-6 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-3 py-1 rounded-full">
+                人気
+              </div>
+              <h3 className="font-semibold text-lg">{t.landing.pricing.starter.name}</h3>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">{t.landing.pricing.starter.price}</span>
+                <span className="text-gray-600">{t.landing.pricing.starter.period}</span>
+              </div>
+              <ul className="mt-6 space-y-3">
+                {t.landing.pricing.starter.features.map((feature, i) => (
+                  <li key={i} className="text-sm text-gray-600 flex items-center gap-2">
+                    <span className="text-green-600">&#10003;</span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Pro */}
+            <div className="rounded-lg border p-6">
+              <h3 className="font-semibold text-lg">{t.landing.pricing.pro.name}</h3>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">{t.landing.pricing.pro.price}</span>
+                <span className="text-gray-600">{t.landing.pricing.pro.period}</span>
+              </div>
+              <ul className="mt-6 space-y-3">
+                {t.landing.pricing.pro.features.map((feature, i) => (
+                  <li key={i} className="text-sm text-gray-600 flex items-center gap-2">
+                    <span className="text-green-600">&#10003;</span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t py-8">
+        <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-600">
+          <div>{t.landing.footer.copyright}</div>
+          <div className="flex gap-6">
+            <a href="#" className="hover:underline">{t.landing.footer.terms}</a>
+            <a href="#" className="hover:underline">{t.landing.footer.privacy}</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

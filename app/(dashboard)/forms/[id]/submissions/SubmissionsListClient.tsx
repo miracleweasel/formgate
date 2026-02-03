@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { t } from "@/lib/i18n";
 
 type SubmissionRow = {
   id: string;
@@ -51,9 +52,9 @@ export default function SubmissionsListClient(props: {
   }, [activeEmail]);
 
   const activeRangeLabel = useMemo(() => {
-    if (activeRange === "today") return "Today";
-    if (activeRange === "7d") return "Last 7 days";
-    if (activeRange === "30d") return "Last 30 days";
+    if (activeRange === "today") return t.submissions.today;
+    if (activeRange === "7d") return t.submissions.last7Days;
+    if (activeRange === "30d") return t.submissions.last30Days;
     return null;
   }, [activeRange]);
 
@@ -170,15 +171,13 @@ export default function SubmissionsListClient(props: {
 
   const emptyLabel =
     activeEmailLabel || activeRangeLabel
-      ? `No submissions${activeEmailLabel ? ` for "${activeEmailLabel}"` : ""}${
-          activeRangeLabel ? ` in ${activeRangeLabel}` : ""
-        }.`
-      : "No submissions yet.";
+      ? t.submissions.noSubmissionsFiltered
+      : t.submissions.noSubmissions;
 
   return (
     <div className="space-y-4">
         <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
-        Filters
+        {t.submissions.filters}
         </div>
       {/* Sticky filter bar */}
         <div className="sticky top-0 z-20 -mx-6 px-6 py-3 bg-gray-900 text-white border-b border-gray-700 shadow">
@@ -192,7 +191,7 @@ export default function SubmissionsListClient(props: {
               onClick={() => setRange("")}
               disabled={loading}
             >
-              All
+              {t.submissions.all}
             </button>
             <button
               type="button"
@@ -202,7 +201,7 @@ export default function SubmissionsListClient(props: {
               onClick={() => setRange("today")}
               disabled={loading}
             >
-              Today
+              {t.submissions.today}
             </button>
             <button
               type="button"
@@ -210,7 +209,7 @@ export default function SubmissionsListClient(props: {
               onClick={() => setRange("7d")}
               disabled={loading}
             >
-              Last 7 days
+              {t.submissions.last7Days}
             </button>
             <button
               type="button"
@@ -220,7 +219,7 @@ export default function SubmissionsListClient(props: {
               onClick={() => setRange("30d")}
               disabled={loading}
             >
-              Last 30 days
+              {t.submissions.last30Days}
             </button>
           </div>
 
@@ -228,7 +227,7 @@ export default function SubmissionsListClient(props: {
           <div className="flex flex-wrap items-center gap-2">
             <input
               className="border rounded px-3 py-2 text-sm w-[260px] max-w-full"
-              placeholder="Search by email"
+              placeholder={t.submissions.searchByEmail}
               value={inputEmail}
               onChange={(e) => setInputEmail(e.target.value)}
             />
@@ -238,7 +237,7 @@ export default function SubmissionsListClient(props: {
               onClick={onSearch}
               disabled={loading}
             >
-              Search
+              {t.submissions.search}
             </button>
             <button
               type="button"
@@ -246,23 +245,23 @@ export default function SubmissionsListClient(props: {
               onClick={onClearSearch}
               disabled={loading}
             >
-              Clear
+              {t.submissions.clear}
             </button>
           </div>
 
           {/* Counters / status */}
           <div className="text-sm text-gray-600">
-            Loaded: <span className="font-medium">{loadedCount}</span>
-            {hasMore ? <span className="ml-2">• More available</span> : <span className="ml-2">• End</span>}
+            {t.submissions.loaded}: <span className="font-medium">{loadedCount}</span>
+            {hasMore ? <span className="ml-2">• {t.submissions.moreAvailable}</span> : <span className="ml-2">• {t.submissions.end}</span>}
             {activeRangeLabel ? (
               <>
-                <span className="ml-2">• Range:</span>{" "}
+                <span className="ml-2">• {t.submissions.range}:</span>{" "}
                 <span className="font-medium">{activeRangeLabel}</span>
               </>
             ) : null}
             {activeEmailLabel ? (
               <>
-                <span className="ml-2">• Email:</span>{" "}
+                <span className="ml-2">• {t.auth.email}:</span>{" "}
                 <span className="font-medium">{activeEmailLabel}</span>
               </>
             ) : null}
@@ -313,7 +312,7 @@ export default function SubmissionsListClient(props: {
           onClick={loadMore}
           disabled={loading}
         >
-          {loading ? "Loading..." : "Load more"}
+          {loading ? t.common.loading : t.submissions.loadMore}
         </button>
       ) : null}
 
@@ -323,9 +322,9 @@ export default function SubmissionsListClient(props: {
           type="button"
           onClick={goTop}
           className="fixed bottom-6 right-6 z-20 rounded-full border bg-white px-4 py-3 text-sm shadow"
-          aria-label="Go to top"
+          aria-label={t.submissions.goToTop}
         >
-          ↑ Top
+          {t.submissions.goToTop}
         </button>
       ) : null}
     </div>

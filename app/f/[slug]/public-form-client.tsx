@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { t } from "@/lib/i18n";
 
 type Props = { slug: string };
 
@@ -18,7 +19,7 @@ export default function PublicFormClient({ slug }: Props) {
 
     const msg = message.trim();
     if (!msg) {
-      setError("Message is required.");
+      setError(t.errors.required);
       return;
     }
 
@@ -37,7 +38,10 @@ export default function PublicFormClient({ slug }: Props) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Submit failed");
+        if (data?.error === "rate_limited") {
+          throw new Error(t.errors.rateLimited);
+        }
+        throw new Error(t.errors.generic);
       }
 
       setDone(true);
@@ -51,8 +55,8 @@ export default function PublicFormClient({ slug }: Props) {
   if (done) {
     return (
       <section className="rounded border p-4">
-        <p className="font-medium">Merci.</p>
-        <p className="text-sm text-neutral-600">Votre message a bien été envoyé.</p>
+        <p className="font-medium">{t.publicForm.thankYou}</p>
+        <p className="text-sm text-neutral-600">{t.publicForm.thankYouMessage}</p>
       </section>
     );
   }
@@ -61,7 +65,7 @@ export default function PublicFormClient({ slug }: Props) {
     <form onSubmit={onSubmit} className="space-y-3 rounded border p-4">
       <div className="space-y-1">
         <label className="text-sm font-medium" htmlFor="email">
-          Email (optional)
+          {t.publicForm.emailLabel} ({t.common.optional})
         </label>
         <input
           id="email"
@@ -70,13 +74,13 @@ export default function PublicFormClient({ slug }: Props) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={submitting}
-          placeholder="you@example.com"
+          placeholder={t.publicForm.emailPlaceholder}
         />
       </div>
 
       <div className="space-y-1">
         <label className="text-sm font-medium" htmlFor="message">
-          Message <span className="text-red-600">*</span>
+          {t.publicForm.messageLabel} <span className="text-red-600">*</span>
         </label>
         <textarea
           id="message"
@@ -84,6 +88,7 @@ export default function PublicFormClient({ slug }: Props) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={submitting}
+          placeholder={t.publicForm.messagePlaceholder}
           required
         />
       </div>
@@ -95,7 +100,7 @@ export default function PublicFormClient({ slug }: Props) {
         disabled={submitting}
         className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
       >
-        {submitting ? "Sending..." : "Submit"}
+        {submitting ? t.publicForm.submitting : t.publicForm.submit}
       </button>
     </form>
   );

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { forms, submissions } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { t } from "@/lib/i18n";
 import DeleteButton from "./DeleteButton";
 
 type Ctx = { params: Promise<{ id: string }> | { id: string } };
@@ -50,7 +51,7 @@ export default async function FormDetailPage(ctx: Ctx) {
 
         <div className="flex gap-2">
           <Link href="/forms" className="rounded-md border px-3 py-2 text-sm">
-            Back
+            {t.common.back}
           </Link>
           <DeleteButton id={form.id} />
         </div>
@@ -59,21 +60,21 @@ export default async function FormDetailPage(ctx: Ctx) {
       {/* Infos */}
       <div className="rounded-md border p-4 space-y-3">
         <div>
-          <div className="text-xs text-gray-500">Description</div>
+          <div className="text-xs text-gray-500">{t.forms.description}</div>
           <div className="text-sm">{form.description ?? "—"}</div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <div className="text-xs text-gray-500">Created</div>
+            <div className="text-xs text-gray-500">{t.forms.created}</div>
             <div className="text-sm">
-              {new Date(form.createdAt).toLocaleString()}
+              {new Date(form.createdAt).toLocaleString("ja-JP")}
             </div>
           </div>
           <div>
-            <div className="text-xs text-gray-500">Updated</div>
+            <div className="text-xs text-gray-500">{t.forms.updated}</div>
             <div className="text-sm">
-              {new Date(form.updatedAt).toLocaleString()}
+              {new Date(form.updatedAt).toLocaleString("ja-JP")}
             </div>
           </div>
         </div>
@@ -81,13 +82,13 @@ export default async function FormDetailPage(ctx: Ctx) {
 
         {/* Integrations */}
       <section className="rounded-md border p-4 space-y-3">
-        <h2 className="text-lg font-semibold">Integrations</h2>
+        <h2 className="text-lg font-semibold">{t.integrations.title}</h2>
 
         <div className="flex items-center justify-between gap-4">
           <div className="text-sm">
-            <div className="font-medium">Backlog</div>
+            <div className="font-medium">{t.integrations.backlog.title}</div>
             <div className="text-xs text-gray-500">
-              Create a Backlog issue on new submission (server-side only).
+              {t.integrations.backlog.description}
             </div>
           </div>
 
@@ -95,7 +96,7 @@ export default async function FormDetailPage(ctx: Ctx) {
             href={`/forms/${form.id}/integrations/backlog`}
             className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
           >
-            Configure
+            {t.integrations.backlog.configure}
           </Link>
         </div>
       </section>
@@ -103,10 +104,10 @@ export default async function FormDetailPage(ctx: Ctx) {
 
       {/* Recent submissions */}
       <section className="rounded-md border p-4 space-y-3">
-        <h2 className="text-lg font-semibold">Recent submissions</h2>
+        <h2 className="text-lg font-semibold">{t.submissions.recent}</h2>
 
         {recent.length === 0 ? (
-          <p className="text-sm text-gray-600">No submissions yet.</p>
+          <p className="text-sm text-gray-600">{t.submissions.noSubmissions}</p>
         ) : (
           <ul className="space-y-3">
             {recent.map((s) => {
@@ -119,18 +120,18 @@ export default async function FormDetailPage(ctx: Ctx) {
                 <li key={s.id} className="rounded border p-3">
                   <div className="text-xs text-gray-500">
                     {s.createdAt
-                      ? new Date(s.createdAt as any).toLocaleString()
+                      ? new Date(s.createdAt as any).toLocaleString("ja-JP")
                       : "—"}
                   </div>
 
                   <div className="mt-1 text-sm space-y-1">
                     <div>
-                      <span className="font-medium">Email:</span>{" "}
+                      <span className="font-medium">{t.publicForm.emailLabel}:</span>{" "}
                       {String(email)}
                     </div>
 
                     <div className="whitespace-pre-wrap">
-                      <span className="font-medium">Message:</span>{" "}
+                      <span className="font-medium">{t.publicForm.messageLabel}:</span>{" "}
                       {String(message)}
                     </div>
                   </div>

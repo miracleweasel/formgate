@@ -3,6 +3,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { t } from "@/lib/i18n";
 
 type Props = {
   formId: string;
@@ -27,15 +28,15 @@ export default function ExportCsvButtonClient({ formId, latestLimit = 50 }: Prop
         onChange={(e) => setMode(e.target.value as "latest" | "all")}
         aria-label="Export mode"
       >
-        <option value="latest">50 dernières</option>
-        <option value="all">Toutes</option>
+        <option value="latest">{t.submissions.exportLatest}</option>
+        <option value="all">{t.submissions.exportAll}</option>
       </select>
 
       <a
         className="rounded-md bg-black px-3 py-1.5 text-sm text-white hover:opacity-90"
         href={href}
       >
-        Export CSV
+        {t.submissions.exportCsv}
       </a>
     </div>
   );
