@@ -1,8 +1,13 @@
 // app/f/[slug]/page.tsx
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { t } from "@/lib/i18n";
 import PublicFormClient from "./public-form-client";
+
+// TODO: Check subscription status to hide branding for paid plans
+const SHOW_BRANDING = true;
 
 export default async function PublicFormPage({
   params,
@@ -27,7 +32,7 @@ export default async function PublicFormPage({
   if (!form) {
     return (
       <main className="mx-auto max-w-xl p-6">
-        <h1 className="text-xl font-semibold">Form not found</h1>
+        <h1 className="text-xl font-semibold">{t.errors.notFound}</h1>
       </main>
     );
   }
@@ -42,6 +47,18 @@ export default async function PublicFormPage({
       </header>
 
       <PublicFormClient slug={form.slug} />
+
+      {SHOW_BRANDING ? (
+        <footer className="pt-4 text-center">
+          <Link
+            href="/"
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            target="_blank"
+          >
+            {t.publicForm.poweredBy}
+          </Link>
+        </footer>
+      ) : null}
     </main>
   );
 }

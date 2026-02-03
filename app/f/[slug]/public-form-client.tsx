@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { t } from "@/lib/i18n";
 
-type Props = { slug: string };
+type Props = { slug: string; showBranding?: boolean };
 
 export default function PublicFormClient({ slug }: Props) {
   const [email, setEmail] = useState("");
