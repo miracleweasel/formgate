@@ -197,26 +197,28 @@ export const ja: TranslationSchema = {
   // ==========================================================================
   landing: {
     hero: {
-      title: "フォームからBacklogへ、自動で。",
-      subtitle: "お問い合わせフォームの送信を、Backlogの課題として自動登録。手作業ゼロ、ミスゼロ。",
+      title: "フォーム → Backlogチケット、自動で。",
+      subtitle: "5分でセットアップ。コードなし。",
       cta: "無料で始める",
       ctaLogin: "ログイン",
+      badge: "Backlog公式API使用",
     },
     features: {
       title: "シンプルな3ステップ",
       step1: {
-        title: "フォームを作成",
-        description: "管理画面でフォームを作成し、公開URLを取得。",
+        title: "フォーム作成",
+        description: "管理画面で30秒でフォームを作成",
       },
       step2: {
-        title: "Backlogと連携",
-        description: "APIキーを設定して、プロジェクトを選択。",
+        title: "Backlog連携",
+        description: "APIキーを貼り付けて接続完了",
       },
       step3: {
-        title: "自動でチケット化",
-        description: "フォーム送信時に、Backlogに課題が自動作成されます。",
+        title: "自動チケット化",
+        description: "送信されると即座に課題作成",
       },
     },
+    usedBy: "導入企業",
     pricing: {
       title: "料金プラン",
       free: {

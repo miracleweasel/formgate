@@ -169,6 +169,7 @@ export interface TranslationSchema {
       subtitle: string;
       cta: string;
       ctaLogin: string;
+      badge: string;
     };
     features: {
       title: string;
@@ -185,6 +186,7 @@ export interface TranslationSchema {
         description: string;
       };
     };
+    usedBy: string;
     pricing: {
       title: string;
       free: {

@@ -197,26 +197,28 @@ export const en: TranslationSchema = {
   // ==========================================================================
   landing: {
     hero: {
-      title: "From Form to Backlog, Automatically.",
-      subtitle: "Convert contact form submissions into Backlog issues instantly. Zero manual work, zero mistakes.",
+      title: "Form → Backlog Ticket, Automatically.",
+      subtitle: "Setup in 5 minutes. No code required.",
       cta: "Get Started Free",
       ctaLogin: "Login",
+      badge: "Official Backlog API",
     },
     features: {
       title: "Simple 3-Step Setup",
       step1: {
-        title: "Create a Form",
-        description: "Create your form in the dashboard and get a public URL.",
+        title: "Create Form",
+        description: "Create a form in 30 seconds from dashboard",
       },
       step2: {
-        title: "Connect to Backlog",
-        description: "Enter your API key and select a project.",
+        title: "Connect Backlog",
+        description: "Paste your API key and you're connected",
       },
       step3: {
-        title: "Auto-Create Tickets",
-        description: "Form submissions automatically become Backlog issues.",
+        title: "Auto-Ticketing",
+        description: "Submissions instantly create issues",
       },
     },
+    usedBy: "Trusted by",
     pricing: {
       title: "Pricing",
       free: {
