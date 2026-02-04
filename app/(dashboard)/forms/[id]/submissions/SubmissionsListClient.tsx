@@ -176,103 +176,120 @@ export default function SubmissionsListClient(props: {
 
   return (
     <div className="space-y-4">
-        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+      <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--color-neutral-500)" }}>
         {t.submissions.filters}
-        </div>
+      </div>
+
       {/* Sticky filter bar */}
-        <div className="sticky top-0 z-20 -mx-6 px-6 py-3 bg-gray-900 text-white border-b border-gray-700 shadow">
+      <div
+        className="sticky top-0 z-20 -mx-6 px-6 py-3 shadow"
+        style={{ background: "var(--color-neutral-800)", borderBottom: "1px solid var(--color-neutral-700)" }}
+      >
         <div className="px-6">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Range buttons */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              className={`border rounded px-3 py-2 text-sm ${activeRange === "" ? "bg-black text-white" : ""}`}
-              onClick={() => setRange("")}
-              disabled={loading}
-            >
-              {t.submissions.all}
-            </button>
-            <button
-              type="button"
-              className={`border rounded px-3 py-2 text-sm ${
-                activeRange === "today" ? "bg-black text-white" : ""
-              }`}
-              onClick={() => setRange("today")}
-              disabled={loading}
-            >
-              {t.submissions.today}
-            </button>
-            <button
-              type="button"
-              className={`border rounded px-3 py-2 text-sm ${activeRange === "7d" ? "bg-black text-white" : ""}`}
-              onClick={() => setRange("7d")}
-              disabled={loading}
-            >
-              {t.submissions.last7Days}
-            </button>
-            <button
-              type="button"
-              className={`border rounded px-3 py-2 text-sm ${
-                activeRange === "30d" ? "bg-black text-white" : ""
-              }`}
-              onClick={() => setRange("30d")}
-              disabled={loading}
-            >
-              {t.submissions.last30Days}
-            </button>
-          </div>
+            {/* Range buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={activeRange === ""
+                  ? { background: "var(--color-primary-500)", color: "white", borderColor: "var(--color-primary-500)" }
+                  : { background: "transparent", color: "var(--color-neutral-300)", borderColor: "var(--color-neutral-600)" }
+                }
+                onClick={() => setRange("")}
+                disabled={loading}
+              >
+                {t.submissions.all}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={activeRange === "today"
+                  ? { background: "var(--color-primary-500)", color: "white", borderColor: "var(--color-primary-500)" }
+                  : { background: "transparent", color: "var(--color-neutral-300)", borderColor: "var(--color-neutral-600)" }
+                }
+                onClick={() => setRange("today")}
+                disabled={loading}
+              >
+                {t.submissions.today}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={activeRange === "7d"
+                  ? { background: "var(--color-primary-500)", color: "white", borderColor: "var(--color-primary-500)" }
+                  : { background: "transparent", color: "var(--color-neutral-300)", borderColor: "var(--color-neutral-600)" }
+                }
+                onClick={() => setRange("7d")}
+                disabled={loading}
+              >
+                {t.submissions.last7Days}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={activeRange === "30d"
+                  ? { background: "var(--color-primary-500)", color: "white", borderColor: "var(--color-primary-500)" }
+                  : { background: "transparent", color: "var(--color-neutral-300)", borderColor: "var(--color-neutral-600)" }
+                }
+                onClick={() => setRange("30d")}
+                disabled={loading}
+              >
+                {t.submissions.last30Days}
+              </button>
+            </div>
 
-          {/* Email search */}
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              className="border rounded px-3 py-2 text-sm w-[260px] max-w-full"
-              placeholder={t.submissions.searchByEmail}
-              value={inputEmail}
-              onChange={(e) => setInputEmail(e.target.value)}
-            />
-            <button
-              type="button"
-              className="border rounded px-3 py-2 text-sm"
-              onClick={onSearch}
-              disabled={loading}
-            >
-              {t.submissions.search}
-            </button>
-            <button
-              type="button"
-              className="text-sm underline"
-              onClick={onClearSearch}
-              disabled={loading}
-            >
-              {t.submissions.clear}
-            </button>
-          </div>
+            {/* Email search */}
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                className="input"
+                style={{ width: "260px", maxWidth: "100%", fontSize: "0.875rem" }}
+                placeholder={t.submissions.searchByEmail}
+                value={inputEmail}
+                onChange={(e) => setInputEmail(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={onSearch}
+                disabled={loading}
+              >
+                {t.submissions.search}
+              </button>
+              <button
+                type="button"
+                className="btn btn-tertiary btn-sm"
+                onClick={onClearSearch}
+                disabled={loading}
+              >
+                {t.submissions.clear}
+              </button>
+            </div>
 
-          {/* Counters / status */}
-          <div className="text-sm text-gray-600">
-            {t.submissions.loaded}: <span className="font-medium">{loadedCount}</span>
-            {hasMore ? <span className="ml-2">• {t.submissions.moreAvailable}</span> : <span className="ml-2">• {t.submissions.end}</span>}
-            {activeRangeLabel ? (
-              <>
-                <span className="ml-2">• {t.submissions.range}:</span>{" "}
-                <span className="font-medium">{activeRangeLabel}</span>
-              </>
-            ) : null}
-            {activeEmailLabel ? (
-              <>
-                <span className="ml-2">• {t.auth.email}:</span>{" "}
-                <span className="font-medium">{activeEmailLabel}</span>
-              </>
-            ) : null}
+            {/* Counters / status */}
+            <div className="text-sm" style={{ color: "var(--color-neutral-400)" }}>
+              {t.submissions.loaded}: <span className="font-medium" style={{ color: "var(--color-neutral-200)" }}>{loadedCount}</span>
+              {hasMore ? <span className="ml-2">• {t.submissions.moreAvailable}</span> : <span className="ml-2">• {t.submissions.end}</span>}
+              {activeRangeLabel ? (
+                <>
+                  <span className="ml-2">• {t.submissions.range}:</span>{" "}
+                  <span className="font-medium" style={{ color: "var(--color-neutral-200)" }}>{activeRangeLabel}</span>
+                </>
+              ) : null}
+              {activeEmailLabel ? (
+                <>
+                  <span className="ml-2">• {t.auth.email}:</span>{" "}
+                  <span className="font-medium" style={{ color: "var(--color-neutral-200)" }}>{activeEmailLabel}</span>
+                </>
+              ) : null}
+            </div>
           </div>
-        </div>
         </div>
       </div>
 
       {/* List */}
       {items.length === 0 ? (
-        <div className="text-sm text-gray-600">{emptyLabel}</div>
+        <div className="text-sm" style={{ color: "var(--color-neutral-600)" }}>{emptyLabel}</div>
       ) : (
         <div className="space-y-3">
           {items.map((s) => {
@@ -287,9 +304,9 @@ export default function SubmissionsListClient(props: {
                 : "—";
 
             return (
-              <div key={s.id} className="border rounded p-3">
-                <div className="text-xs text-gray-600">{fmtDate(s.created_at)}</div>
-                <div className="text-sm">
+              <div key={s.id} className="card" style={{ padding: "var(--space-3)" }}>
+                <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>{fmtDate(s.created_at)}</div>
+                <div className="text-sm" style={{ color: "var(--color-neutral-700)" }}>
                   <div>
                     <span className="font-medium">Email:</span> {email}
                   </div>
@@ -308,7 +325,7 @@ export default function SubmissionsListClient(props: {
       {nextCursor ? (
         <button
           type="button"
-          className="border rounded px-3 py-2 text-sm"
+          className="btn btn-secondary"
           onClick={loadMore}
           disabled={loading}
         >
@@ -321,7 +338,8 @@ export default function SubmissionsListClient(props: {
         <button
           type="button"
           onClick={goTop}
-          className="fixed bottom-6 right-6 z-20 rounded-full border bg-white px-4 py-3 text-sm shadow"
+          className="btn fixed bottom-6 right-6 z-20 shadow-lg"
+          style={{ background: "var(--color-neutral-0)", color: "var(--color-neutral-700)", borderRadius: "9999px" }}
           aria-label={t.submissions.goToTop}
         >
           {t.submissions.goToTop}

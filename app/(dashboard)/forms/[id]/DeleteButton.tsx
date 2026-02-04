@@ -30,7 +30,12 @@ export default function DeleteButton({ id }: { id: string }) {
     <button
       onClick={onDelete}
       disabled={deleting}
-      className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 disabled:opacity-60"
+      className="btn btn-sm"
+      style={{
+        background: "var(--color-error-50)",
+        color: "var(--color-error-700)",
+        borderColor: "var(--color-error-300)",
+      }}
     >
       {deleting ? t.forms.deleting : t.common.delete}
     </button>

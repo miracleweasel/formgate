@@ -4,7 +4,7 @@ import LoginClient from "./LoginClient";
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-gray-600">Loading…</div>}>
+    <Suspense fallback={<div className="p-6 text-sm" style={{ color: "var(--color-neutral-600)" }}>Loading…</div>}>
       <LoginClient />
     </Suspense>
   );

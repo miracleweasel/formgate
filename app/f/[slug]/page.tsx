@@ -31,18 +31,18 @@ export default async function PublicFormPage({
 
   if (!form) {
     return (
-      <main className="mx-auto max-w-xl p-6">
-        <h1 className="text-xl font-semibold">{t.errors.notFound}</h1>
+      <main className="mx-auto max-w-xl p-6" style={{ background: "var(--color-neutral-50)" }}>
+        <h1 className="text-xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>{t.errors.notFound}</h1>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-xl p-6 space-y-4">
+    <main className="mx-auto max-w-xl p-6 space-y-4 min-h-screen" style={{ background: "var(--color-neutral-50)" }}>
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">{form.name}</h1>
+        <h1 className="text-2xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>{form.name}</h1>
         {form.description ? (
-          <p className="text-sm text-neutral-600">{form.description}</p>
+          <p className="text-sm" style={{ color: "var(--color-neutral-600)" }}>{form.description}</p>
         ) : null}
       </header>
 
@@ -52,7 +52,8 @@ export default async function PublicFormPage({
         <footer className="pt-4 text-center">
           <Link
             href="/"
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-xs transition-colors"
+            style={{ color: "var(--color-neutral-400)" }}
             target="_blank"
           >
             {t.publicForm.poweredBy}

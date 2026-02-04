@@ -23,7 +23,8 @@ export default function ExportCsvButtonClient({ formId, latestLimit = 50 }: Prop
   return (
     <div className="flex items-center gap-2">
       <select
-        className="rounded-md border px-2 py-1 text-sm"
+        className="input"
+        style={{ width: "auto", padding: "var(--space-2) var(--space-3)", fontSize: "0.875rem" }}
         value={mode}
         onChange={(e) => setMode(e.target.value as "latest" | "all")}
         aria-label="Export mode"
@@ -33,7 +34,7 @@ export default function ExportCsvButtonClient({ formId, latestLimit = 50 }: Prop
       </select>
 
       <a
-        className="rounded-md bg-black px-3 py-1.5 text-sm text-white hover:opacity-90"
+        className="btn btn-primary btn-sm"
         href={href}
       >
         {t.submissions.exportCsv}

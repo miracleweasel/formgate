@@ -54,16 +54,16 @@ export default function LoginClient() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-0px)] flex items-center justify-center p-6">
-      <div className="w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold">{t.auth.loginTitle}</h1>
-        <p className="mt-1 text-sm text-gray-600">{t.auth.loginSubtitle}</p>
+    <div className="min-h-[calc(100vh-0px)] flex items-center justify-center p-6" style={{ background: "var(--color-neutral-50)" }}>
+      <div className="card w-full max-w-sm">
+        <h1 className="text-xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>{t.auth.loginTitle}</h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--color-neutral-600)" }}>{t.auth.loginSubtitle}</p>
 
-        <form className="mt-6 space-y-3" onSubmit={onSubmit}>
+        <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <div className="space-y-1">
-            <label className="text-sm font-medium">{t.auth.email}</label>
+            <label className="text-sm font-medium" style={{ color: "var(--color-neutral-700)" }}>{t.auth.email}</label>
             <input
-              className="w-full rounded-md border px-3 py-2 text-sm"
+              className="input"
               type="email"
               autoComplete="email"
               value={email}
@@ -73,9 +73,9 @@ export default function LoginClient() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium">{t.auth.password}</label>
+            <label className="text-sm font-medium" style={{ color: "var(--color-neutral-700)" }}>{t.auth.password}</label>
             <input
-              className="w-full rounded-md border px-3 py-2 text-sm"
+              className="input"
               type="password"
               autoComplete="current-password"
               value={password}
@@ -85,13 +85,13 @@ export default function LoginClient() {
           </div>
 
           {error ? (
-            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="alert alert-error">
               {error}
             </div>
           ) : null}
 
           <button
-            className="w-full rounded-md bg-black px-3 py-2 text-sm text-white disabled:opacity-60"
+            className="btn btn-primary w-full"
             disabled={busy}
           >
             {busy ? t.auth.signingIn : t.auth.signIn}

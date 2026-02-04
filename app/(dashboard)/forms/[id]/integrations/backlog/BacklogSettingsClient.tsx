@@ -195,7 +195,7 @@ export default function BacklogSettingsClient({ formId }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-md border p-4 text-sm text-gray-600">
+      <div className="card text-sm" style={{ color: "var(--color-neutral-600)" }}>
         {t.common.loading}
       </div>
     );
@@ -204,36 +204,36 @@ export default function BacklogSettingsClient({ formId }: Props) {
   return (
     <div className="space-y-6">
       {/* Connection info (safe) */}
-      <section className="rounded-md border p-4 space-y-2">
-        <h2 className="text-lg font-semibold">{t.integrations.backlog.connectionSafe}</h2>
+      <section className="card space-y-2">
+        <h2 className="text-lg font-semibold" style={{ color: "var(--color-neutral-800)" }}>{t.integrations.backlog.connectionSafe}</h2>
 
         <div className="text-sm">
-          <div className="text-xs text-gray-500">{t.integrations.backlog.spaceUrl}</div>
-          <div className="break-all">{spaceUrl || "—"}</div>
+          <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>{t.integrations.backlog.spaceUrl}</div>
+          <div className="break-all" style={{ color: "var(--color-neutral-700)" }}>{spaceUrl || "—"}</div>
         </div>
 
         <div className="text-sm">
-          <div className="text-xs text-gray-500">{t.integrations.backlog.defaultProjectKey}</div>
-          <div>{defaultProjectKey || "—"}</div>
+          <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>{t.integrations.backlog.defaultProjectKey}</div>
+          <div style={{ color: "var(--color-neutral-700)" }}>{defaultProjectKey || "—"}</div>
         </div>
 
-        <div className="pt-2 flex gap-2">
+        <div className="pt-2 flex gap-2 items-center">
           <button
             type="button"
             onClick={testConnection}
             disabled={testing}
-            className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+            className="btn btn-secondary btn-sm"
           >
             {testing ? t.integrations.backlog.testing : t.integrations.backlog.testConnection}
           </button>
 
           {testMsg && (
             <div
-              className={`text-sm px-3 py-2 rounded-md ${
-                testMsg.kind === "ok"
-                  ? "bg-green-50 text-green-800"
-                  : "bg-red-50 text-red-800"
-              }`}
+              className="badge"
+              style={testMsg.kind === "ok"
+                ? { background: "var(--color-success-100)", color: "var(--color-success-700)" }
+                : { background: "var(--color-error-100)", color: "var(--color-error-700)" }
+              }
             >
               {testMsg.text}
             </div>
@@ -242,20 +242,21 @@ export default function BacklogSettingsClient({ formId }: Props) {
       </section>
 
       {/* Form settings */}
-      <section className="rounded-md border p-4 space-y-4">
-        <h2 className="text-lg font-semibold">{t.integrations.backlog.formSettings}</h2>
+      <section className="card space-y-4">
+        <h2 className="text-lg font-semibold" style={{ color: "var(--color-neutral-800)" }}>{t.integrations.backlog.formSettings}</h2>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm" style={{ color: "var(--color-neutral-700)" }}>
           <input
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
+            style={{ accentColor: "var(--color-primary-500)" }}
           />
           {t.integrations.backlog.enableForForm}
         </label>
 
         <div className="space-y-1">
-          <div className="text-xs text-gray-500">
+          <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>
             {t.integrations.backlog.projectKeyOverride}
           </div>
 
@@ -263,12 +264,12 @@ export default function BacklogSettingsClient({ formId }: Props) {
             value={projectKeyOverride}
             onChange={(e) => setProjectKeyOverride(e.target.value)}
             placeholder={t.integrations.backlog.projectKeyPlaceholder}
-            className="w-full rounded-md border px-3 py-2 text-sm"
+            className="input"
           />
 
-          <div className="text-xs text-gray-500">
+          <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>
             {t.integrations.backlog.effectiveProjectKey}:{" "}
-            <span className="font-medium">{effectiveProjectKey || "—"}</span>
+            <span className="font-medium" style={{ color: "var(--color-primary-600)" }}>{effectiveProjectKey || "—"}</span>
           </div>
         </div>
 
@@ -277,25 +278,25 @@ export default function BacklogSettingsClient({ formId }: Props) {
             type="button"
             onClick={save}
             disabled={saving}
-            className="rounded-md bg-black px-3 py-2 text-sm text-white hover:opacity-90 disabled:opacity-60"
+            className="btn btn-primary"
           >
             {saving ? t.integrations.backlog.saving : t.common.save}
           </button>
 
           {msg && (
             <div
-              className={`text-sm px-3 py-2 rounded-md ${
-                msg.kind === "ok"
-                  ? "bg-green-50 text-green-800"
-                  : "bg-red-50 text-red-800"
-              }`}
+              className="badge"
+              style={msg.kind === "ok"
+                ? { background: "var(--color-success-100)", color: "var(--color-success-700)" }
+                : { background: "var(--color-error-100)", color: "var(--color-error-700)" }
+              }
             >
               {msg.text}
             </div>
           )}
         </div>
 
-        <div className="text-xs text-gray-500">
+        <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>
           {t.integrations.backlog.apiKeyNote}
         </div>
       </section>

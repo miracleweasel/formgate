@@ -55,20 +55,20 @@ export default function NewFormPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{t.forms.createTitle}</h1>
-        <Link href="/forms" className="rounded-md border px-3 py-2 text-sm">
+        <h1 className="text-xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>{t.forms.createTitle}</h1>
+        <Link href="/forms" className="btn btn-secondary btn-sm">
           {t.common.back}
         </Link>
       </div>
 
-      <form onSubmit={onSubmit} className="rounded-md border p-4 space-y-4">
+      <form onSubmit={onSubmit} className="card space-y-4">
         <div className="space-y-1">
-          <label className="text-sm font-medium" htmlFor="name">
-            {t.forms.formName} <span className="text-red-600">*</span>
+          <label className="text-sm font-medium" htmlFor="name" style={{ color: "var(--color-neutral-700)" }}>
+            {t.forms.formName} <span style={{ color: "var(--color-error-500)" }}>*</span>
           </label>
           <input
             id="name"
-            className="w-full rounded border px-3 py-2"
+            className="input"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={submitting}
@@ -78,28 +78,28 @@ export default function NewFormPage() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium" htmlFor="slug">
-            {t.forms.slug} <span className="text-red-600">*</span>
+          <label className="text-sm font-medium" htmlFor="slug" style={{ color: "var(--color-neutral-700)" }}>
+            {t.forms.slug} <span style={{ color: "var(--color-error-500)" }}>*</span>
           </label>
           <input
             id="slug"
-            className="w-full rounded border px-3 py-2"
+            className="input"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             disabled={submitting}
             placeholder={t.forms.slugPlaceholder}
             required
           />
-          <p className="text-xs text-gray-500">{t.forms.slugHint}</p>
+          <p className="text-xs" style={{ color: "var(--color-neutral-500)" }}>{t.forms.slugHint}</p>
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium" htmlFor="description">
+          <label className="text-sm font-medium" htmlFor="description" style={{ color: "var(--color-neutral-700)" }}>
             {t.forms.description} ({t.common.optional})
           </label>
           <textarea
             id="description"
-            className="w-full rounded border px-3 py-2 min-h-[90px]"
+            className="input min-h-[90px]"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={submitting}
@@ -107,12 +107,12 @@ export default function NewFormPage() {
           />
         </div>
 
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="text-sm" style={{ color: "var(--color-error-500)" }}>{error}</p> : null}
 
         <button
           type="submit"
           disabled={submitting}
-          className="rounded bg-black px-4 py-2 text-white text-sm disabled:opacity-50"
+          className="btn btn-primary"
         >
           {submitting ? t.forms.creating : t.common.create}
         </button>

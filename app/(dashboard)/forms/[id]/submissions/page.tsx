@@ -77,8 +77,8 @@ export default async function Page(props: {
       <header className="space-y-1">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-xl font-semibold">{form.name}</h1>
-            <div className="text-sm text-gray-600">/{form.slug}</div>
+            <h1 className="text-xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>{form.name}</h1>
+            <div className="text-sm" style={{ color: "var(--color-neutral-500)" }}>/{form.slug}</div>
           </div>
 
           <div className="pt-1">
@@ -87,7 +87,7 @@ export default async function Page(props: {
         </div>
 
         <div className="pt-2">
-          <Link className="text-sm underline" href={`/forms/${id}`}>
+          <Link className="btn btn-tertiary btn-sm" href={`/forms/${id}`}>
             ← Back to form
           </Link>
         </div>

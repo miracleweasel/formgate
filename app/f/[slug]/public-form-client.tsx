@@ -54,22 +54,22 @@ export default function PublicFormClient({ slug }: Props) {
 
   if (done) {
     return (
-      <section className="rounded border p-4">
-        <p className="font-medium">{t.publicForm.thankYou}</p>
-        <p className="text-sm text-neutral-600">{t.publicForm.thankYouMessage}</p>
+      <section className="card" style={{ borderColor: "var(--color-success-300)", background: "var(--color-success-50)" }}>
+        <p className="font-medium" style={{ color: "var(--color-success-700)" }}>{t.publicForm.thankYou}</p>
+        <p className="text-sm" style={{ color: "var(--color-success-600)" }}>{t.publicForm.thankYouMessage}</p>
       </section>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3 rounded border p-4">
+    <form onSubmit={onSubmit} className="card space-y-4">
       <div className="space-y-1">
-        <label className="text-sm font-medium" htmlFor="email">
+        <label className="text-sm font-medium" htmlFor="email" style={{ color: "var(--color-neutral-700)" }}>
           {t.publicForm.emailLabel} ({t.common.optional})
         </label>
         <input
           id="email"
-          className="w-full rounded border px-3 py-2"
+          className="input"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -79,12 +79,12 @@ export default function PublicFormClient({ slug }: Props) {
       </div>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium" htmlFor="message">
-          {t.publicForm.messageLabel} <span className="text-red-600">*</span>
+        <label className="text-sm font-medium" htmlFor="message" style={{ color: "var(--color-neutral-700)" }}>
+          {t.publicForm.messageLabel} <span style={{ color: "var(--color-error-500)" }}>*</span>
         </label>
         <textarea
           id="message"
-          className="w-full rounded border px-3 py-2 min-h-[120px]"
+          className="input min-h-[120px]"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={submitting}
@@ -93,12 +93,12 @@ export default function PublicFormClient({ slug }: Props) {
         />
       </div>
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm" style={{ color: "var(--color-error-500)" }}>{error}</p> : null}
 
       <button
         type="submit"
         disabled={submitting}
-        className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+        className="btn btn-primary"
       >
         {submitting ? t.publicForm.submitting : t.publicForm.submit}
       </button>

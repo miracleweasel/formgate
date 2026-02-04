@@ -45,12 +45,12 @@ export default async function FormDetailPage(ctx: Ctx) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold">{form.name}</h1>
-          <div className="text-sm text-gray-600">/{form.slug}</div>
+          <h1 className="text-xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>{form.name}</h1>
+          <div className="text-sm" style={{ color: "var(--color-neutral-500)" }}>/{form.slug}</div>
         </div>
 
         <div className="flex gap-2">
-          <Link href="/forms" className="rounded-md border px-3 py-2 text-sm">
+          <Link href="/forms" className="btn btn-secondary btn-sm">
             {t.common.back}
           </Link>
           <DeleteButton id={form.id} />
@@ -58,56 +58,55 @@ export default async function FormDetailPage(ctx: Ctx) {
       </div>
 
       {/* Infos */}
-      <div className="rounded-md border p-4 space-y-3">
+      <div className="card space-y-3">
         <div>
-          <div className="text-xs text-gray-500">{t.forms.description}</div>
-          <div className="text-sm">{form.description ?? "—"}</div>
+          <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>{t.forms.description}</div>
+          <div className="text-sm" style={{ color: "var(--color-neutral-700)" }}>{form.description ?? "—"}</div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <div className="text-xs text-gray-500">{t.forms.created}</div>
-            <div className="text-sm">
+            <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>{t.forms.created}</div>
+            <div className="text-sm" style={{ color: "var(--color-neutral-700)" }}>
               {new Date(form.createdAt).toLocaleString("ja-JP")}
             </div>
           </div>
           <div>
-            <div className="text-xs text-gray-500">{t.forms.updated}</div>
-            <div className="text-sm">
+            <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>{t.forms.updated}</div>
+            <div className="text-sm" style={{ color: "var(--color-neutral-700)" }}>
               {new Date(form.updatedAt).toLocaleString("ja-JP")}
             </div>
           </div>
         </div>
       </div>
 
-        {/* Integrations */}
-      <section className="rounded-md border p-4 space-y-3">
-        <h2 className="text-lg font-semibold">{t.integrations.title}</h2>
+      {/* Integrations */}
+      <section className="card space-y-3">
+        <h2 className="text-lg font-semibold" style={{ color: "var(--color-neutral-800)" }}>{t.integrations.title}</h2>
 
         <div className="flex items-center justify-between gap-4">
           <div className="text-sm">
-            <div className="font-medium">{t.integrations.backlog.title}</div>
-            <div className="text-xs text-gray-500">
+            <div className="font-medium" style={{ color: "var(--color-neutral-700)" }}>{t.integrations.backlog.title}</div>
+            <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>
               {t.integrations.backlog.description}
             </div>
           </div>
 
           <Link
             href={`/forms/${form.id}/integrations/backlog`}
-            className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+            className="btn btn-secondary btn-sm"
           >
             {t.integrations.backlog.configure}
           </Link>
         </div>
       </section>
 
-
       {/* Recent submissions */}
-      <section className="rounded-md border p-4 space-y-3">
-        <h2 className="text-lg font-semibold">{t.submissions.recent}</h2>
+      <section className="card space-y-3">
+        <h2 className="text-lg font-semibold" style={{ color: "var(--color-neutral-800)" }}>{t.submissions.recent}</h2>
 
         {recent.length === 0 ? (
-          <p className="text-sm text-gray-600">{t.submissions.noSubmissions}</p>
+          <p className="text-sm" style={{ color: "var(--color-neutral-600)" }}>{t.submissions.noSubmissions}</p>
         ) : (
           <ul className="space-y-3">
             {recent.map((s) => {
@@ -117,14 +116,14 @@ export default async function FormDetailPage(ctx: Ctx) {
               const message = payload.message ?? "—";
 
               return (
-                <li key={s.id} className="rounded border p-3">
-                  <div className="text-xs text-gray-500">
+                <li key={s.id} className="rounded-lg p-3" style={{ border: "1px solid var(--color-neutral-200)", background: "var(--color-neutral-50)" }}>
+                  <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>
                     {s.createdAt
                       ? new Date(s.createdAt as any).toLocaleString("ja-JP")
                       : "—"}
                   </div>
 
-                  <div className="mt-1 text-sm space-y-1">
+                  <div className="mt-1 text-sm space-y-1" style={{ color: "var(--color-neutral-700)" }}>
                     <div>
                       <span className="font-medium">{t.publicForm.emailLabel}:</span>{" "}
                       {String(email)}
