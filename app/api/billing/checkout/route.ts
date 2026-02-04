@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     const url = await createCheckoutUrl(email.trim());
     return NextResponse.json({ url });
   } catch (e) {
-    console.error("[billing/checkout] error", e);
+    console.error("[billing/checkout] error"); // Never log error object (may contain sensitive data)
     return internalError();
   }
 }

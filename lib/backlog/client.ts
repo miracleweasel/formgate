@@ -6,6 +6,65 @@ export type BacklogClientConfig = {
   apiKey: string;
 };
 
+// ============================================================================
+// BACKLOG API RATE LIMITING
+// Backlog allows ~600 requests/hour per API key.
+// We limit to 500/hour to have margin for safety.
+// ============================================================================
+
+const BACKLOG_RATE_LIMIT = 500; // requests per hour
+const BACKLOG_RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+type RateLimitBucket = {
+  count: number;
+  resetAt: number;
+};
+
+// Rate limit buckets keyed by normalized spaceUrl
+const backlogRateLimitBuckets = new Map<string, RateLimitBucket>();
+
+// Cleanup old buckets periodically
+let lastCleanup = Date.now();
+const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+function cleanupBuckets() {
+  const now = Date.now();
+  if (now - lastCleanup < CLEANUP_INTERVAL) return;
+  lastCleanup = now;
+  for (const [key, bucket] of backlogRateLimitBuckets) {
+    if (bucket.resetAt < now) {
+      backlogRateLimitBuckets.delete(key);
+    }
+  }
+}
+
+/**
+ * Check and consume Backlog API rate limit.
+ * Returns true if request is allowed, false if rate limited.
+ */
+function checkBacklogRateLimit(spaceUrl: string): boolean {
+  cleanupBuckets();
+
+  const key = normalizeSpaceUrl(spaceUrl);
+  const now = Date.now();
+
+  let bucket = backlogRateLimitBuckets.get(key);
+
+  if (!bucket || bucket.resetAt < now) {
+    // Start new window
+    bucket = { count: 1, resetAt: now + BACKLOG_RATE_WINDOW_MS };
+    backlogRateLimitBuckets.set(key, bucket);
+    return true;
+  }
+
+  if (bucket.count >= BACKLOG_RATE_LIMIT) {
+    return false; // Rate limited
+  }
+
+  bucket.count++;
+  return true;
+}
+
 export function makeBacklogApiUrl(
   cfg: BacklogClientConfig,
   path: string,
@@ -29,12 +88,18 @@ export function makeBacklogApiUrl(
 /**
  * Minimal Backlog fetch wrapper.
  * IMPORTANT: Never log apiKey, never log request headers.
+ * Rate limited to 500 requests/hour per spaceUrl.
  */
 export async function backlogGetJson<T>(
   cfg: BacklogClientConfig,
   path: string,
   query?: Record<string, string | number | boolean | null | undefined>
 ): Promise<{ ok: true; data: T } | { ok: false; status: number; error: string }> {
+  // Check rate limit before making request
+  if (!checkBacklogRateLimit(cfg.spaceUrl)) {
+    return { ok: false, status: 429, error: "rate_limited" };
+  }
+
   const url = makeBacklogApiUrl(cfg, path, query);
 
   let res: Response;
@@ -56,12 +121,21 @@ export async function backlogGetJson<T>(
   }
 }
 
+/**
+ * POST to Backlog API.
+ * Rate limited to 500 requests/hour per spaceUrl.
+ */
 export async function backlogPostJson<T>(
   cfg: BacklogClientConfig,
   path: string,
   body: Record<string, unknown>,
   query?: Record<string, string | number | boolean | null | undefined>
 ): Promise<{ ok: true; data: T } | { ok: false; status: number; error: string }> {
+  // Check rate limit before making request
+  if (!checkBacklogRateLimit(cfg.spaceUrl)) {
+    return { ok: false, status: 429, error: "rate_limited" };
+  }
+
   const url = makeBacklogApiUrl(cfg, path, query);
 
   let res: Response;

@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       return jsonError(409, "slug already exists");
     }
 
-    console.error("[forms] create error", e);
+    console.error("[forms] create error"); // Never log error object (may contain sensitive data)
     return internalError();
   }
 }

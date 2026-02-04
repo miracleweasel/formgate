@@ -45,7 +45,7 @@ export async function GET(req: Request) {
       { status: 200 }
     );
   } catch (e) {
-    console.error("[integrations/backlog][GET] error", e);
+    console.error("[integrations/backlog][GET] error"); // Never log error object (may contain sensitive data)
     return internalError();
   }
 }

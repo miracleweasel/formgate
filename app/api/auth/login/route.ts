@@ -1,6 +1,7 @@
 // app/api/auth/login/route.ts
 import { NextResponse } from "next/server";
 import { getAdminEmail, getAdminPassword } from "@/lib/auth/admin";
+import { verifyPassword } from "@/lib/auth/password";
 import {
   makeSessionCookieValue,
   sessionCookieOptions,
@@ -42,8 +43,16 @@ export async function POST(req: Request) {
   const adminEmail = (await getAdminEmail()) ?? "";
   const adminPassword = (await getAdminPassword()) ?? "";
 
-  // MVP: comparaison simple (env only), réponse neutre
-  if (email !== adminEmail.toLowerCase() || password !== adminPassword) {
+  // Email check (case-insensitive)
+  if (email !== adminEmail.toLowerCase()) {
+    return jsonError(401, "invalid credentials");
+  }
+
+  // Password verification (supports both hashed and plain text for migration)
+  // PBKDF2 hash format: salt:hash (hex encoded)
+  // Plain text: backward compatible but should be migrated
+  const passwordValid = await verifyPassword(password, adminPassword);
+  if (!passwordValid) {
     return jsonError(401, "invalid credentials");
   }
 

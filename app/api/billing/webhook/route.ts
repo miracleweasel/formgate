@@ -149,7 +149,7 @@ export async function POST(req: Request) {
 
     return ok();
   } catch (e) {
-    console.error("[billing/webhook] handler error", e);
+    console.error("[billing/webhook] handler error"); // Never log error object (may contain sensitive data)
     return ok();
   }
 }
