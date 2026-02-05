@@ -63,13 +63,43 @@ export function rateLimitOrNull(opts: RateLimitOptions): NextResponse | null {
 
 /**
  * Best-effort "client identity".
- * - Prefer x-forwarded-for first IP when present, fallback to "unknown".
- * - This is imperfect but acceptable for best-effort limiting.
+ *
+ * SECURITY: Only trust proxy headers if TRUSTED_PROXY=1 is set.
+ * Without this, attackers can spoof X-Forwarded-For to bypass rate limits.
+ * On platforms like Vercel/Cloudflare, the platform sets the real IP
+ * and you should enable TRUSTED_PROXY=1.
+ *
+ * Fallback chain: x-real-ip (safer, set by reverse proxies) -> x-forwarded-for -> "unknown"
  */
 export function getClientIp(req: Request): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]!.trim();
-  const xrip = req.headers.get("x-real-ip");
-  if (xrip) return xrip.trim();
-  return "unknown";
+  const trustProxy = process.env.TRUSTED_PROXY === "1";
+
+  if (trustProxy) {
+    // x-real-ip is typically set by the outermost proxy (harder to spoof)
+    const xrip = req.headers.get("x-real-ip");
+    if (xrip) return xrip.trim();
+
+    const xff = req.headers.get("x-forwarded-for");
+    if (xff) {
+      // Take LAST IP in the chain (closest to our server, added by our proxy)
+      // NOT the first (which the client controls)
+      const parts = xff.split(",").map((s) => s.trim()).filter(Boolean);
+      if (parts.length > 0) return parts[parts.length - 1];
+    }
+  }
+
+  // Without TRUSTED_PROXY, don't trust any proxy headers.
+  // Use a hash of available headers as fingerprint (best-effort).
+  const ua = req.headers.get("user-agent") ?? "";
+  const accept = req.headers.get("accept-language") ?? "";
+  // This is imperfect but prevents trivial header spoofing.
+  return `fp:${simpleHash(ua + accept)}`;
+}
+
+function simpleHash(s: string): string {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  return (h >>> 0).toString(36);
 }

@@ -15,13 +15,14 @@ const schema = {
     formId: Symbol("settings.formId"),
     enabled: Symbol("settings.enabled"),
     projectKey: Symbol("settings.projectKey"),
+    fieldMapping: Symbol("settings.fieldMapping"),
     updatedAt: Symbol("settings.updatedAt"),
   },
 };
 
 const eq = (..._args: any[]) => ({ _tag: "eq" });
 
-function makeDb(selectSteps: Array<any[]>) {
+function makeDb(selectSteps: Array<any[]>, onInsert?: (v: any) => void) {
   let i = 0;
   return {
     select: () => ({
@@ -33,11 +34,29 @@ function makeDb(selectSteps: Array<any[]>) {
       }),
     }),
     insert: () => ({
-      values: (_v: any) => ({
-        onConflictDoUpdate: async () => ({}),
-      }),
+      values: (v: any) => {
+        onInsert?.(v);
+        return {
+          onConflictDoUpdate: async () => ({}),
+        };
+      },
     }),
   };
+}
+
+const adminEmail = "admin@example.com";
+
+async function makeAuthReq(body?: unknown) {
+  const cookie = await makeSessionCookieValue(adminEmail);
+  const init: RequestInit = {
+    headers: { cookie: `${SESSION_COOKIE_NAME}=${cookie}` },
+  };
+  if (body !== undefined) {
+    init.method = "PUT";
+    (init.headers as Record<string, string>)["content-type"] = "application/json";
+    init.body = JSON.stringify(body);
+  }
+  return new Request("http://localhost", init);
 }
 
 test("GET -> 401 when no cookie", async () => {
@@ -46,10 +65,9 @@ test("GET -> 401 when no cookie", async () => {
     db,
     schema,
     eq,
-    getAdminEmail: async () => "admin@example.com",
+    getAdminEmail: async () => adminEmail,
   });
 
-  // No cookie = unauthorized
   const res = await GET(new Request("http://localhost"), {
     params: Promise.resolve({ id: "x" }),
   });
@@ -61,8 +79,7 @@ test("GET -> 401 when no cookie", async () => {
 });
 
 test("GET -> 404 when form not found", async () => {
-  const db = makeDb([[]]); // forms select => []
-  const adminEmail = "admin@example.com";
+  const db = makeDb([[]]);
   const { GET } = makeBacklogFormSettingsHandlers({
     db,
     schema,
@@ -70,15 +87,8 @@ test("GET -> 404 when form not found", async () => {
     getAdminEmail: async () => adminEmail,
   });
 
-  // Create valid session cookie
-  const cookie = await makeSessionCookieValue(adminEmail);
-  const req = new Request("http://localhost", {
-    headers: { cookie: `${SESSION_COOKIE_NAME}=${cookie}` },
-  });
-
-  const res = await GET(req, {
-    params: Promise.resolve({ id: "x" }),
-  });
+  const req = await makeAuthReq();
+  const res = await GET(req, { params: Promise.resolve({ id: "x" }) });
 
   assert.equal(res.status, 404);
   const j = await res.json();
@@ -86,9 +96,7 @@ test("GET -> 404 when form not found", async () => {
 });
 
 test("GET -> ok defaults when connection missing", async () => {
-  // 1) form exists, 2) connection missing
   const db = makeDb([[{ id: "x" }], []]);
-  const adminEmail = "admin@example.com";
   const { GET } = makeBacklogFormSettingsHandlers({
     db,
     schema,
@@ -96,19 +104,168 @@ test("GET -> ok defaults when connection missing", async () => {
     getAdminEmail: async () => adminEmail,
   });
 
-  // Create valid session cookie
-  const cookie = await makeSessionCookieValue(adminEmail);
-  const req = new Request("http://localhost", {
-    headers: { cookie: `${SESSION_COOKIE_NAME}=${cookie}` },
-  });
-
-  const res = await GET(req, {
-    params: Promise.resolve({ id: "x" }),
-  });
+  const req = await makeAuthReq();
+  const res = await GET(req, { params: Promise.resolve({ id: "x" }) });
 
   assert.equal(res.status, 200);
   const j = await res.json();
   assert.equal(j.ok, true);
   assert.deepEqual(j.connection, { spaceUrl: "", defaultProjectKey: "" });
   assert.deepEqual(j.settings, { enabled: false, projectKey: null });
+});
+
+test("GET -> returns fieldMapping when present", async () => {
+  const mapping = {
+    summary: { type: "template", template: "{company} inquiry" },
+    priorityId: 4,
+  };
+  // 1) form exists, 2) connection exists, 3) settings with mapping
+  const db = makeDb([
+    [{ id: "x" }],
+    [{ spaceUrl: "https://test.backlog.jp", defaultProjectKey: "PROJ" }],
+    [{ enabled: true, projectKey: "CUSTOM", fieldMapping: mapping }],
+  ]);
+  const { GET } = makeBacklogFormSettingsHandlers({
+    db,
+    schema,
+    eq,
+    getAdminEmail: async () => adminEmail,
+  });
+
+  const req = await makeAuthReq();
+  const res = await GET(req, { params: Promise.resolve({ id: "x" }) });
+
+  assert.equal(res.status, 200);
+  const j = await res.json();
+  assert.equal(j.ok, true);
+  assert.equal(j.settings.enabled, true);
+  assert.equal(j.settings.projectKey, "CUSTOM");
+  assert.deepEqual(j.settings.fieldMapping, mapping);
+});
+
+test("GET -> fieldMapping null when not configured", async () => {
+  const db = makeDb([
+    [{ id: "x" }],
+    [{ spaceUrl: "https://test.backlog.jp", defaultProjectKey: "PROJ" }],
+    [{ enabled: true, projectKey: null, fieldMapping: null }],
+  ]);
+  const { GET } = makeBacklogFormSettingsHandlers({
+    db,
+    schema,
+    eq,
+    getAdminEmail: async () => adminEmail,
+  });
+
+  const req = await makeAuthReq();
+  const res = await GET(req, { params: Promise.resolve({ id: "x" }) });
+
+  assert.equal(res.status, 200);
+  const j = await res.json();
+  assert.equal(j.settings.fieldMapping, null);
+});
+
+test("PUT -> saves valid fieldMapping", async () => {
+  let savedValues: any = null;
+  const db = makeDb([[{ id: "x" }]], (v) => { savedValues = v; });
+  const { PUT } = makeBacklogFormSettingsHandlers({
+    db,
+    schema,
+    eq,
+    getAdminEmail: async () => adminEmail,
+  });
+
+  const mapping = {
+    summary: { type: "field", field: "subject" },
+    description: { type: "auto" },
+    priorityId: 2,
+    customFields: [{ backlogFieldId: 100, formFieldName: "email" }],
+  };
+
+  const req = await makeAuthReq({ enabled: true, projectKey: "PROJ", fieldMapping: mapping });
+  const res = await PUT(req, { params: Promise.resolve({ id: "x" }) });
+
+  assert.equal(res.status, 200);
+  const j = await res.json();
+  assert.equal(j.ok, true);
+  assert.ok(savedValues);
+  assert.deepEqual(savedValues.fieldMapping, mapping);
+});
+
+test("PUT -> rejects invalid fieldMapping", async () => {
+  const db = makeDb([[{ id: "x" }]]);
+  const { PUT } = makeBacklogFormSettingsHandlers({
+    db,
+    schema,
+    eq,
+    getAdminEmail: async () => adminEmail,
+  });
+
+  const invalidMapping = {
+    priorityId: 99, // Invalid: max is 4
+  };
+
+  const req = await makeAuthReq({ enabled: true, fieldMapping: invalidMapping });
+  const res = await PUT(req, { params: Promise.resolve({ id: "x" }) });
+
+  assert.equal(res.status, 400);
+  const j = await res.json();
+  assert.equal(j.error, "invalid_field_mapping");
+});
+
+test("PUT -> saves null fieldMapping when not provided", async () => {
+  let savedValues: any = null;
+  const db = makeDb([[{ id: "x" }]], (v) => { savedValues = v; });
+  const { PUT } = makeBacklogFormSettingsHandlers({
+    db,
+    schema,
+    eq,
+    getAdminEmail: async () => adminEmail,
+  });
+
+  const req = await makeAuthReq({ enabled: true, projectKey: "PROJ" });
+  const res = await PUT(req, { params: Promise.resolve({ id: "x" }) });
+
+  assert.equal(res.status, 200);
+  assert.ok(savedValues);
+  assert.equal(savedValues.fieldMapping, null);
+});
+
+test("PUT -> 404 when form not found", async () => {
+  const db = makeDb([[]]);
+  const { PUT } = makeBacklogFormSettingsHandlers({
+    db,
+    schema,
+    eq,
+    getAdminEmail: async () => adminEmail,
+  });
+
+  const req = await makeAuthReq({ enabled: true });
+  const res = await PUT(req, { params: Promise.resolve({ id: "x" }) });
+
+  assert.equal(res.status, 404);
+});
+
+test("PUT -> 400 on invalid JSON", async () => {
+  const db = makeDb([[{ id: "x" }]]);
+  const { PUT } = makeBacklogFormSettingsHandlers({
+    db,
+    schema,
+    eq,
+    getAdminEmail: async () => adminEmail,
+  });
+
+  const cookie = await makeSessionCookieValue(adminEmail);
+  const req = new Request("http://localhost", {
+    method: "PUT",
+    headers: {
+      cookie: `${SESSION_COOKIE_NAME}=${cookie}`,
+      "content-type": "application/json",
+    },
+    body: "not-json{{{",
+  });
+
+  const res = await PUT(req, { params: Promise.resolve({ id: "x" }) });
+  assert.equal(res.status, 400);
+  const j = await res.json();
+  assert.equal(j.error, "invalid_json");
 });

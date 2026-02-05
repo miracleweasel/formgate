@@ -167,6 +167,12 @@ export async function backlogPostJson<T>(
 
 type BacklogProject = { id: number; projectKey: string; name: string };
 type BacklogIssueType = { id: number; name: string };
+type BacklogCustomField = { id: number; name: string; typeId: number };
+
+export type CustomFieldValue = {
+  backlogFieldId: number;
+  value: string | number | boolean | null;
+};
 
 export async function createBacklogIssueBestEffort(args: {
   spaceUrl: string;
@@ -174,6 +180,9 @@ export async function createBacklogIssueBestEffort(args: {
   projectKey: string;
   summary: string;
   description: string;
+  priorityId?: number;
+  issueTypeId?: number;
+  customFields?: CustomFieldValue[];
 }) {
   const cfg: BacklogClientConfig = { spaceUrl: args.spaceUrl, apiKey: args.apiKey };
 
@@ -184,26 +193,58 @@ export async function createBacklogIssueBestEffort(args: {
   const project = projectsRes.data.find((p) => p.projectKey === args.projectKey);
   if (!project) return { ok: false as const, error: "project_not_found" };
 
-  // 2) Resolve issueTypeId (take the first one)
-  const typesRes = await backlogGetJson<BacklogIssueType[]>(
-    cfg,
-    `/api/v2/projects/${project.id}/issueTypes`
-  );
-  if (!typesRes.ok) return { ok: false as const, error: "issuetype_lookup_failed" };
+  // 2) Resolve issueTypeId
+  let issueTypeId = args.issueTypeId;
+  if (!issueTypeId) {
+    // Get first available issue type
+    const typesRes = await backlogGetJson<BacklogIssueType[]>(
+      cfg,
+      `/api/v2/projects/${project.id}/issueTypes`
+    );
+    if (!typesRes.ok) return { ok: false as const, error: "issuetype_lookup_failed" };
 
-  const issueType = typesRes.data[0];
-  if (!issueType) return { ok: false as const, error: "no_issue_type" };
+    const issueType = typesRes.data[0];
+    if (!issueType) return { ok: false as const, error: "no_issue_type" };
+    issueTypeId = issueType.id;
+  }
 
-  // 3) Create issue
-  // priorityId: 3 = Normal (common default on Backlog)
-  const createRes = await backlogPostJson<any>(cfg, "/api/v2/issues", {
+  // 3) Build issue body
+  const issueBody: Record<string, unknown> = {
     projectId: project.id,
     summary: args.summary,
     description: args.description,
-    issueTypeId: issueType.id,
-    priorityId: 3,
-  });
+    issueTypeId,
+    priorityId: args.priorityId ?? 3, // Default: Normal
+  };
+
+  // 4) Add custom fields if provided
+  if (args.customFields && args.customFields.length > 0) {
+    for (const cf of args.customFields) {
+      if (cf.value !== null && cf.value !== undefined && cf.value !== "") {
+        // Backlog custom field format: customField_{id}
+        issueBody[`customField_${cf.backlogFieldId}`] = cf.value;
+      }
+    }
+  }
+
+  // 5) Create issue
+  const createRes = await backlogPostJson<any>(cfg, "/api/v2/issues", issueBody);
 
   if (!createRes.ok) return { ok: false as const, error: "issue_create_failed" };
   return { ok: true as const };
+}
+
+/**
+ * Get custom fields for a project (for mapping UI)
+ */
+export async function getProjectCustomFields(
+  cfg: BacklogClientConfig,
+  projectIdOrKey: string | number
+): Promise<{ ok: true; data: BacklogCustomField[] } | { ok: false; error: string }> {
+  const res = await backlogGetJson<BacklogCustomField[]>(
+    cfg,
+    `/api/v2/projects/${projectIdOrKey}/customFields`
+  );
+  if (!res.ok) return { ok: false, error: res.error };
+  return { ok: true, data: res.data };
 }

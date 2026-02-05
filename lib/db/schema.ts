@@ -1,6 +1,7 @@
 // lib/db/schema.ts
 import { pgTable, uuid, text, timestamp, jsonb, index, boolean } from "drizzle-orm/pg-core";
 import type { FormField } from "@/lib/validation/fields";
+import type { BacklogFieldMapping } from "@/lib/validation/backlogMapping";
 
 export const forms = pgTable("forms", {
   id: uuid("id").primaryKey(),
@@ -89,6 +90,7 @@ export const integrationBacklogFormSettings = pgTable(
 
     enabled: boolean("enabled").notNull().default(false),
     projectKey: text("project_key"), // nullable override, else use connection.defaultProjectKey
+    fieldMapping: jsonb("field_mapping").$type<BacklogFieldMapping>(), // Field mapping config
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })

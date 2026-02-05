@@ -14,7 +14,7 @@ pnpm install
 cp .env.example .env.local  # Configure DATABASE_URL, APP_ENC_KEY, ADMIN_EMAIL, ADMIN_PASSWORD
 pnpm drizzle-kit push       # Apply DB migrations
 pnpm dev                    # Start dev server
-pnpm test                   # Run 166 tests
+pnpm test                   # Run 173+ tests
 pnpm build                  # Production build
 ```
 
@@ -30,24 +30,28 @@ pnpm build                  # Production build
 | **Password Hashing** | ✅ PBKDF2 100k iter | `lib/auth/password.ts` |
 | **Form CRUD** | ✅ Done | `app/api/forms/route.ts`, `app/api/forms/[id]/route.ts` |
 | **Custom Fields** | ✅ Done | `lib/validation/fields.ts`, `lib/db/schema.ts` |
+| **Field Mapping Backlog** | ✅ Done | `lib/validation/backlogMapping.ts`, `lib/backlog/issue.ts` |
 | **Public Form Render** | ✅ Dynamic | `app/f/[slug]/public-form-client.tsx` |
 | **Form Submission** | ✅ Done | `app/api/public/forms/[slug]/submit/route.ts` |
 | **Backlog Connection** | ✅ Done | `lib/backlog/client.ts` |
-| **Backlog Auto-Issue** | ✅ Done | Non-blocking on submit |
-| **Rate Limiting** | ✅ Done | IP 10/min, Backlog 500/h |
+| **Backlog Auto-Issue** | ✅ Done | Non-blocking on submit, with field mapping |
+| **Backlog Project Meta** | ✅ Done | `app/api/integrations/backlog/project-meta/route.ts` |
+| **Billing Enforcement** | ✅ Done | `lib/billing/planLimits.ts` (form count + submission limits) |
+| **Rate Limiting** | ✅ Hardened | IP 10/min submit, 30/min read, Backlog 500/h |
+| **CSRF Protection** | ✅ Done | Origin/Referer validation in `proxy.ts` |
 | **Encryption** | ✅ AES-256-GCM | `lib/crypto.ts` (PBKDF2 key derivation) |
-| **Security Headers** | ✅ Done | `proxy.ts` (CSP, X-Frame-Options, etc.) |
-| **i18n** | ✅ JA/EN | `lib/i18n/` |
-| **Tests** | ✅ 166 passing | `test/` |
+| **Security Headers** | ✅ Done | `proxy.ts` (CSP, X-Frame-Options, Permissions-Policy, etc.) |
+| **i18n** | ✅ JA/EN | `lib/i18n/` (includes field mapping UI translations) |
+| **Tests** | ✅ 173+ passing | `test/` (includes attacker-perspective security tests) |
 
 ### Pending Features
 
 | Feature | Priority | Notes |
 |---------|----------|-------|
-| **Field Mapping Backlog** | High | Map form fields → Backlog custom fields |
-| **Admin Field Builder UI** | Medium | Visual drag-drop interface for fields |
-| **Stripe Integration** | Medium | Billing, subscriptions |
+| **Admin Field Builder UI** | High | Visual drag-drop interface for fields |
+| **Stripe Integration** | Medium | Billing, subscriptions (replace LemonSqueezy) |
 | **Webhooks** | Low | Notify external systems on submit |
+| **Error Monitoring** | Low | Sentry integration |
 
 ---
 
@@ -69,29 +73,66 @@ formgate/
 │   ├── (dashboard)/           # Admin pages (protected)
 │   │   ├── forms/             # Form management
 │   │   │   ├── [id]/          # Form detail, submissions, integrations
+│   │   │   │   └── integrations/backlog/  # Backlog settings + field mapping UI
 │   │   │   └── new/           # Create form
 │   │   └── billing/           # Subscription management
 │   ├── api/
 │   │   ├── auth/              # Login/logout
-│   │   ├── forms/             # Form CRUD API
-│   │   ├── public/forms/[slug]/ # Public submission API
-│   │   ├── integrations/      # Backlog connection
-│   │   └── billing/           # Stripe webhooks
+│   │   ├── forms/             # Form CRUD API (billing enforced)
+│   │   ├── public/forms/[slug]/ # Public submission API (rate limited + billing)
+│   │   ├── integrations/      # Backlog connection + project-meta
+│   │   └── billing/           # Stripe webhooks (auth protected)
 │   ├── f/[slug]/              # Public form page
 │   └── login/                 # Login page
 ├── lib/
 │   ├── auth/                  # Session, password, admin guards
 │   ├── backlog/               # Backlog API client, issue builder
+│   ├── billing/               # Plan limits enforcement
 │   ├── db/                    # Drizzle schema, connection
-│   ├── http/                  # Rate limiting, error helpers
+│   ├── http/                  # Rate limiting (hardened), error helpers
 │   ├── i18n/                  # Translations (ja, en)
-│   └── validation/            # Zod schemas (forms, fields, etc.)
+│   └── validation/            # Zod schemas (forms, fields, backlogMapping)
 ├── drizzle/                   # SQL migrations
-├── test/                      # All tests
-├── proxy.ts                   # Auth proxy + security headers
+├── test/                      # All tests (173+)
+├── proxy.ts                   # Auth proxy + security headers + CSRF
 ├── CLAUDE.md                  # CTO brief for Claude
 └── README.md                  # This file
 ```
+
+---
+
+## Field Mapping System
+
+### Overview
+Maps form submission fields to Backlog issue fields (summary, description, issue type, priority, custom fields).
+
+### Mapping Configuration
+```typescript
+{
+  summary?: {
+    mode: "default" | "field" | "template",
+    fieldName?: string,          // Map a specific form field
+    template?: string            // e.g. "[{company}] {subject}"
+  },
+  description?: {
+    mode: "auto" | "field" | "template",
+    fieldName?: string,
+    template?: string
+  },
+  issueTypeId?: number,         // Backlog issue type ID
+  priorityId?: number,          // Backlog priority ID (2=High, 3=Normal, 4=Low)
+  customFields?: [{
+    backlogFieldId: number,
+    formFieldName: string        // Map form field → Backlog custom field
+  }]
+}
+```
+
+### Key Files
+- `lib/validation/backlogMapping.ts` - Zod schemas + template functions
+- `lib/backlog/issue.ts` - `buildMappedIssue()` builds summary/description from mapping
+- `app/api/integrations/backlog/project-meta/route.ts` - Fetches issue types, priorities, custom fields from Backlog API
+- `app/(dashboard)/forms/[id]/integrations/backlog/BacklogSettingsClient.tsx` - Mapping UI
 
 ---
 
@@ -145,6 +186,7 @@ integration_backlog_form_settings (
   form_id UUID PRIMARY KEY REFERENCES forms(id),
   enabled BOOLEAN DEFAULT false,
   project_key TEXT,           -- Override default
+  field_mapping JSONB,        -- Field mapping configuration
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
@@ -207,7 +249,22 @@ integration_backlog_form_settings (
 ### Rate Limiting (`lib/http/rateLimit.ts`)
 - In-memory sliding window
 - Public form submit: 10/min per IP
+- Public form read: 30/min per IP (anti-enumeration)
 - Backlog API: 500/hour per spaceUrl
+- **Hardened IP extraction**: Proxy headers (X-Forwarded-For, X-Real-IP) only trusted when `TRUSTED_PROXY=1`
+- Without TRUSTED_PROXY: uses request fingerprint (`fp:{hash}`) to prevent IP spoofing via headers
+
+### CSRF Protection (`proxy.ts`)
+- Origin/Referer header validation on all mutation requests (POST/PUT/PATCH/DELETE)
+- Blocks cross-origin form submissions
+- Allows JSON content-type without Origin (for curl/server-to-server)
+- Applied to both public and admin endpoints
+
+### Billing Enforcement (`lib/billing/planLimits.ts`)
+- `canCreateForm()`: enforces form count limits per plan
+- `canSubmit()`: enforces monthly submission limits per plan
+- Checked server-side on every form creation and submission
+- Free plan: 1 form, 50 submissions/month
 
 ### Security Headers (`proxy.ts`)
 - Content-Security-Policy
@@ -215,6 +272,21 @@ integration_backlog_form_settings (
 - X-Content-Type-Options: nosniff
 - X-XSS-Protection: 1; mode=block
 - Referrer-Policy: strict-origin-when-cross-origin
+- Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+### Middleware Route Coverage (`proxy.ts`)
+- **Admin paths** (require auth): `/forms/*`, `/billing/*`, `/api/forms/*`, `/api/integrations/*`, `/api/billing/*`
+- **Public paths** (no auth): `/`, `/login`, `/api/auth/*`, `/f/*`, `/api/public/*`, `/api/billing/webhook`, `/api/health/*`
+
+### Security Audit Results
+| Vulnerability | Severity | Status |
+|--------------|----------|--------|
+| Zero billing enforcement | CRITICAL | ✅ Fixed |
+| Rate limit IP spoofing via XFF | HIGH | ✅ Fixed |
+| `/api/billing/status` no auth | HIGH | ✅ Fixed |
+| Middleware missing `/api/integrations/*` | MEDIUM | ✅ Fixed |
+| No CSRF origin check | MEDIUM | ✅ Fixed |
+| Public form GET no rate limit | LOW | ✅ Fixed |
 
 ---
 
@@ -224,9 +296,9 @@ integration_backlog_form_settings (
 - `POST /api/auth/login` - Login with email/password
 - `POST /api/auth/logout` - Logout
 
-### Forms (Admin)
+### Forms (Admin, billing enforced)
 - `GET /api/forms` - List all forms
-- `POST /api/forms` - Create form
+- `POST /api/forms` - Create form (checks plan form limit)
 - `GET /api/forms/[id]` - Get form
 - `PATCH /api/forms/[id]` - Update form (name, slug, description, fields)
 - `DELETE /api/forms/[id]` - Delete form
@@ -235,17 +307,18 @@ integration_backlog_form_settings (
 - `GET /api/forms/[id]/submissions` - List with pagination, filters
 - `GET /api/forms/[id]/submissions/export` - CSV export
 
-### Public
-- `GET /api/public/forms/[slug]` - Get form info
-- `POST /api/public/forms/[slug]/submit` - Submit form
+### Public (rate limited, billing enforced)
+- `GET /api/public/forms/[slug]` - Get form info (30/min rate limit)
+- `POST /api/public/forms/[slug]/submit` - Submit form (10/min rate limit, monthly limit)
 
-### Integrations
+### Integrations (Admin)
 - `GET /api/integrations/backlog` - Get Backlog connection
 - `POST /api/integrations/backlog` - Create/update connection
 - `DELETE /api/integrations/backlog` - Delete connection
 - `POST /api/integrations/backlog/test` - Test connection
-- `GET /api/forms/[id]/integrations/backlog` - Form Backlog settings
-- `POST /api/forms/[id]/integrations/backlog` - Update form settings
+- `GET /api/integrations/backlog/project-meta` - Get issue types, priorities, custom fields
+- `GET /api/forms/[id]/integrations/backlog` - Form Backlog settings (with field mapping)
+- `POST /api/forms/[id]/integrations/backlog` - Update form settings (with field mapping)
 
 ---
 
@@ -257,8 +330,10 @@ DATABASE_URL=postgresql://...
 APP_ENC_KEY=random-32-char-string-for-encryption
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=hashed-or-plain-password
+AUTH_SECRET=random-secret-for-session-signing
 
 # Optional
+TRUSTED_PROXY=1                    # Enable proxy header trust (for reverse proxy setups)
 LEMONSQUEEZY_WEBHOOK_SECRET=...
 LEMONSQUEEZY_API_KEY=...
 ```
@@ -268,16 +343,19 @@ LEMONSQUEEZY_API_KEY=...
 ## Testing
 
 ```bash
-pnpm test                    # Run all 166 tests
+pnpm test                    # Run all 173+ tests
 pnpm test -- --grep "field"  # Run specific tests
 ```
 
 ### Test Categories
 - `test/fields.test.ts` - Custom fields validation (23 tests)
-- `test/security.comprehensive.test.ts` - Attack simulations
+- `test/backlog.mapping.test.ts` - Field mapping functions and schemas (47 tests)
+- `test/security.exploits.test.ts` - Attacker-perspective security tests (38 tests)
+- `test/security.comprehensive.test.ts` - Security comprehensive tests
+- `test/rateLimit.test.ts` - Rate limiting with TRUSTED_PROXY awareness
+- `test/api.backlog-form-settings.handlers.test.ts` - Backlog settings handlers (10 tests)
 - `test/password.test.ts` - Password hashing
 - `test/crypto.test.ts` - Encryption
-- `test/rateLimit.test.ts` - Rate limiting
 - `test/i18n.test.ts` - Translations
 
 ---
@@ -301,13 +379,11 @@ pnpm drizzle-kit studio      # Open Drizzle Studio
 ```bash
 # Current state
 git log --oneline -5
+# 11637c4 docs(claude): add mandatory README update instruction
+# 2f07c28 docs: comprehensive README with technical state and resume instructions
 # 4e8fb53 fix(config): correct drizzle schema path
 # 4f89f66 feat(forms): add custom fields support
 # 366696d fix(security): enhance crypto KDF and add security headers
-# 487cbf4 merge: J8-2 backlog submit + admin guards
-
-# Branch: main (3 commits ahead of origin)
-git push  # To publish
 ```
 
 ---
@@ -318,36 +394,36 @@ git push  # To publish
 1. `CLAUDE.md` - CTO brief, priorities, constraints
 2. `README.md` - This file, technical state
 3. `lib/validation/fields.ts` - Custom fields system
-4. `lib/db/schema.ts` - Database schema
+4. `lib/validation/backlogMapping.ts` - Field mapping schemas
+5. `lib/db/schema.ts` - Database schema
 
 ### Next Tasks (Priority Order)
 
-1. **Field Mapping to Backlog** (High)
-   - Map form fields → Backlog issue fields (summary, description, custom fields)
-   - Files: `lib/backlog/issue.ts`, `app/api/forms/[id]/integrations/backlog/`
-   - Add mapping config to `integration_backlog_form_settings` table
-
-2. **Admin Field Builder UI** (Medium)
+1. **Admin Field Builder UI** (High)
    - Visual interface to configure form fields
    - Files: `app/(dashboard)/forms/[id]/edit/`, new `components/FieldBuilder.tsx`
-   - Drag-drop reordering, field type selection
+   - Drag-drop reordering, field type selection, live preview
 
-3. **Stripe Integration** (Medium)
+2. **Stripe Integration** (Medium)
    - Replace LemonSqueezy with Stripe
    - Checkout, webhooks, subscription management
    - Files: `app/api/billing/`
+
+3. **Error Monitoring** (Low)
+   - Sentry integration for production error tracking
 
 ### Useful Prompts
 
 ```
 "Continue implementing FormGate. Read CLAUDE.md and README.md first.
-Current state: custom fields done, need field mapping to Backlog."
+Current state: field mapping done, security hardened. Next: Admin Field Builder UI."
 
 "Add Field Builder UI to FormGate admin. Allow drag-drop field
-configuration with live preview."
+configuration with live preview. Read lib/validation/fields.ts for field types."
 
 "Implement Stripe billing for FormGate. Plans: Free (1 form),
-Starter (5 forms, 2980 JPY/mo), Pro (unlimited, 9800 JPY/mo)."
+Starter (5 forms, 2980 JPY/mo), Pro (unlimited, 9800 JPY/mo).
+Replace LemonSqueezy. Read lib/billing/planLimits.ts for plan enforcement."
 ```
 
 ---

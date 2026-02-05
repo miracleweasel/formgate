@@ -79,7 +79,12 @@
 - [x] Secrets : .env sécurisé, APP_ENC_KEY pour encryption, pas de secrets côté client
 - [x] Logs : sanitized - pas de données sensibles loggées (erreurs sans stack traces)
 - [x] Security headers : CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff, etc. (proxy.ts)
-- [x] Tests sécurité : 166 tests passant, attack simulations (SQL injection, XSS, path traversal)
+- [x] Tests sécurité : 173+ tests passant, attack simulations (SQL injection, XSS, path traversal, IP spoofing, CSRF, billing bypass)
+- [x] CSRF protection : Origin/Referer validation sur toutes les mutations (proxy.ts)
+- [x] Billing enforcement : limites form count + submissions/mois côté serveur (lib/billing/planLimits.ts)
+- [x] IP extraction hardened : proxy headers ignorés sans TRUSTED_PROXY=1 (anti-spoofing)
+- [x] Middleware coverage : /api/integrations/* et /api/billing/* protégés auth
+- [x] Public form GET rate limited (30/min anti-enumeration)
 
 ### Phase 2 : MVP Features ✅ EN COURS
 - [x] Custom Fields : champs dynamiques (text, email, number, textarea, select)
@@ -88,7 +93,13 @@
   - Validation dynamique côté serveur avec buildSubmissionSchema()
   - Rendu dynamique dans public-form-client.tsx
   - Backward compatible: DEFAULT_FIELDS (email + message) si pas de champs définis
-- [ ] Field Mapping Backlog : mapper les champs vers Backlog custom fields
+- [x] Field Mapping Backlog : mapper les champs vers Backlog custom fields
+  - lib/validation/backlogMapping.ts - schémas Zod pour mapping
+  - lib/backlog/issue.ts - buildMappedIssue() avec templates
+  - app/api/integrations/backlog/project-meta/route.ts - metadata Backlog (issueTypes, priorities, customFields)
+  - BacklogSettingsClient.tsx - UI complète pour configurer le mapping
+  - drizzle/0005_add_backlog_field_mapping.sql - migration field_mapping JSONB
+  - 47 tests unitaires (test/backlog.mapping.test.ts)
 - [ ] Admin Field Builder UI : interface drag-and-drop pour configurer les champs
 
 ### Phase 2 : Architecture
@@ -158,8 +169,10 @@
 ## CHECKLIST PRÉ-LANCEMENT
 
 ### Technique
-- [x] Tests sécurité passés (166 tests, attack simulations)
-- [x] Rate limiting actif (IP 10/min, Backlog API 500/h)
+- [x] Tests sécurité passés (173+ tests, attack simulations, attacker-perspective tests)
+- [x] Rate limiting actif (IP 10/min submit, 30/min read, Backlog API 500/h)
+- [x] CSRF protection (proxy.ts)
+- [x] Billing enforcement server-side (lib/billing/planLimits.ts)
 - [ ] Error monitoring (Sentry)
 - [ ] Backups DB automatiques
 - [ ] SSL/HTTPS

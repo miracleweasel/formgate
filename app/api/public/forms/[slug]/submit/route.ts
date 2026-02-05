@@ -9,8 +9,8 @@ import {
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getAdminEmail } from "@/lib/auth/admin";
-import { buildIssueDescription, buildIssueSummary } from "@/lib/backlog/issue";
-import { createBacklogIssueBestEffort } from "@/lib/backlog/client";
+import { buildMappedIssue } from "@/lib/backlog/issue";
+import { createBacklogIssueBestEffort, type CustomFieldValue } from "@/lib/backlog/client";
 import { decryptString } from "@/lib/crypto";
 import { getClientIp, rateLimitOrNull } from "@/lib/http/rateLimit";
 import {
@@ -18,6 +18,7 @@ import {
   DEFAULT_FIELDS,
   type FormField,
 } from "@/lib/validation/fields";
+import { canSubmit } from "@/lib/billing/planLimits";
 
 type Primitive = string | number | boolean | null;
 type Payload = Record<string, Primitive>;
@@ -80,7 +81,19 @@ export async function POST(
     );
   }
 
-  // 3) Validate payload against field schema
+  // 3) Billing enforcement: check monthly submission limit
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    const check = await canSubmit(adminEmail);
+    if (!check.allowed) {
+      return NextResponse.json(
+        { error: "Monthly submission limit reached" },
+        { status: 429 }
+      );
+    }
+  }
+
+  // 4) Validate payload against field schema
   // Use form's custom fields or fall back to default fields
   const fieldDefs: FormField[] =
     form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS;
@@ -120,6 +133,7 @@ export async function POST(
         .select({
           enabled: integrationBacklogFormSettings.enabled,
           projectKey: integrationBacklogFormSettings.projectKey,
+          fieldMapping: integrationBacklogFormSettings.fieldMapping,
         })
         .from(integrationBacklogFormSettings)
         .where(eq(integrationBacklogFormSettings.formId, form.id))
@@ -163,20 +177,38 @@ export async function POST(
       ).trim();
       if (!projectKey) return;
 
-      const summary = buildIssueSummary(form.name, form.slug);
-      const description = buildIssueDescription({
+      // Build issue using field mapping
+      const issueData = buildMappedIssue({
         formName: form.name,
         formSlug: form.slug,
         submissionId,
         payload,
+        mapping: setting.fieldMapping,
       });
+
+      // Build custom field values if mapping exists
+      const customFields: CustomFieldValue[] = [];
+      if (setting.fieldMapping?.customFields) {
+        for (const cf of setting.fieldMapping.customFields) {
+          const value = payload[cf.formFieldName];
+          if (value !== undefined) {
+            customFields.push({
+              backlogFieldId: cf.backlogFieldId,
+              value,
+            });
+          }
+        }
+      }
 
       await createBacklogIssueBestEffort({
         spaceUrl,
         apiKey,
         projectKey,
-        summary,
-        description,
+        summary: issueData.summary,
+        description: issueData.description,
+        priorityId: issueData.priorityId,
+        issueTypeId: issueData.issueTypeId,
+        customFields: customFields.length > 0 ? customFields : undefined,
       });
     } catch {
       // Neutral server log ONLY (no apiKey, no headers, no payload dump)

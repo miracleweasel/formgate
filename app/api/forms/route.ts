@@ -9,6 +9,7 @@ import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
 import { unauthorized, internalError, jsonError } from "@/lib/http/errors";
 import { CreateFormSchema } from "@/lib/validation/forms";
 import { DEFAULT_FIELDS } from "@/lib/validation/fields";
+import { canCreateForm } from "@/lib/billing/planLimits";
 
 export async function GET(req: Request) {
   if (!(await requireAdminFromRequest(req))) return unauthorized();
@@ -28,6 +29,15 @@ export async function POST(req: Request) {
     const msg =
       parsed.error.issues[0]?.message ?? "invalid input";
     return jsonError(400, msg);
+  }
+
+  // Billing enforcement: check form count limit
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    const check = await canCreateForm(adminEmail);
+    if (!check.allowed) {
+      return jsonError(403, `Form limit reached (${check.current}/${check.max}). Upgrade your plan.`);
+    }
   }
 
   const { name, slug: rawSlug, description, fields } = parsed.data;

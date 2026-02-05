@@ -138,6 +138,34 @@ export interface TranslationSchema {
       invalidResponse: string;
       loadFailed: string;
       connectionOk: string;
+      // Field mapping
+      fieldMapping: string;
+      fieldMappingDesc: string;
+      summaryMapping: string;
+      summaryDefault: string;
+      summaryField: string;
+      summaryTemplate: string;
+      summaryFieldSelect: string;
+      summaryTemplatePlaceholder: string;
+      descriptionMapping: string;
+      descriptionAuto: string;
+      descriptionField: string;
+      descriptionTemplate: string;
+      descriptionTemplatePlaceholder: string;
+      issueType: string;
+      issueTypeDefault: string;
+      priority: string;
+      priorityDefault: string;
+      customFields: string;
+      customFieldsDesc: string;
+      addCustomField: string;
+      removeCustomField: string;
+      backlogField: string;
+      formField: string;
+      noCustomFields: string;
+      loadingMeta: string;
+      loadMetaFailed: string;
+      refreshMeta: string;
     };
   };
 

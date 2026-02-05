@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { DEFAULT_FIELDS, type FormField } from "@/lib/validation/fields";
 import BacklogSettingsClient from "./BacklogSettingsClient";
 
 type Ctx = { params: Promise<{ id: string }> | { id: string } };
@@ -26,6 +27,7 @@ export default async function BacklogIntegrationPage(ctx: Ctx) {
       id: forms.id,
       name: forms.name,
       slug: forms.slug,
+      fields: forms.fields,
     })
     .from(forms)
     .where(eq(forms.id, id))
@@ -57,6 +59,7 @@ export default async function BacklogIntegrationPage(ctx: Ctx) {
         formId={form.id}
         formName={form.name}
         formSlug={form.slug}
+        formFields={(form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS) as FormField[]}
       />
     </div>
   );

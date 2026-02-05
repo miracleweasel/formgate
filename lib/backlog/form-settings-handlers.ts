@@ -5,6 +5,7 @@ import {
   SESSION_COOKIE_NAME,
 } from "@/lib/auth/session";
 import { getCookieValue } from "@/lib/auth/requireAdmin";
+import { BacklogFieldMappingSchema, type BacklogFieldMapping } from "@/lib/validation/backlogMapping";
 
 type DbLike = {
   select: (...args: any[]) => any;
@@ -22,6 +23,7 @@ type SchemaLike = {
     formId: any;
     enabled: any;
     projectKey: any;
+    fieldMapping: any;
     updatedAt: any;
   };
 };
@@ -124,6 +126,7 @@ export function makeBacklogFormSettingsHandlers(deps: {
       .select({
         enabled: integrationBacklogFormSettings.enabled,
         projectKey: integrationBacklogFormSettings.projectKey,
+        fieldMapping: integrationBacklogFormSettings.fieldMapping,
       })
       .from(integrationBacklogFormSettings)
       .where(eq(integrationBacklogFormSettings.formId, id))
@@ -138,6 +141,7 @@ export function makeBacklogFormSettingsHandlers(deps: {
       settings: {
         enabled: !!settings?.enabled,
         projectKey: settings?.projectKey ?? null,
+        fieldMapping: settings?.fieldMapping ?? null,
       },
     });
   }
@@ -175,17 +179,29 @@ export function makeBacklogFormSettingsHandlers(deps: {
     const enabled = !!(body as Record<string, unknown>).enabled;
     const projectKey = normalizeProjectKey((body as Record<string, unknown>).projectKey);
 
+    // Validate field mapping if provided
+    let fieldMapping: BacklogFieldMapping | null = null;
+    const rawMapping = (body as Record<string, unknown>).fieldMapping;
+    if (rawMapping !== undefined && rawMapping !== null) {
+      const mappingResult = BacklogFieldMappingSchema.safeParse(rawMapping);
+      if (!mappingResult.success) {
+        return json({ ok: false, error: "invalid_field_mapping" }, { status: 400 });
+      }
+      fieldMapping = mappingResult.data;
+    }
+
     await db
       .insert(integrationBacklogFormSettings)
       .values({
         formId: id,
         enabled,
         projectKey,
+        fieldMapping,
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: integrationBacklogFormSettings.formId,
-        set: { enabled, projectKey, updatedAt: new Date() },
+        set: { enabled, projectKey, fieldMapping, updatedAt: new Date() },
       });
 
     return json({ ok: true });

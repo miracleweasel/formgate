@@ -5,33 +5,58 @@ import assert from "node:assert/strict";
 import { rateLimitOrNull, getClientIp } from "../lib/http/rateLimit";
 
 // =============================================================================
-// getClientIp tests
+// getClientIp tests (hardened: TRUSTED_PROXY aware)
 // =============================================================================
 
-test("getClientIp => returns x-forwarded-for first IP", () => {
+test("getClientIp => without TRUSTED_PROXY, ignores proxy headers (anti-spoofing)", () => {
+  // Save and clear TRUSTED_PROXY
+  const prev = process.env.TRUSTED_PROXY;
+  delete process.env.TRUSTED_PROXY;
+
   const req = new Request("http://localhost", {
     headers: { "x-forwarded-for": "1.2.3.4, 5.6.7.8" },
   });
-  assert.equal(getClientIp(req), "1.2.3.4");
+  const ip = getClientIp(req);
+  // Should NOT return the spoofed XFF IP
+  assert.ok(!ip.includes("1.2.3.4"));
+  assert.ok(ip.startsWith("fp:"));
+
+  process.env.TRUSTED_PROXY = prev;
 });
 
-test("getClientIp => returns x-real-ip when no x-forwarded-for", () => {
+test("getClientIp => with TRUSTED_PROXY=1, takes LAST XFF IP (proxy-added)", () => {
+  const prev = process.env.TRUSTED_PROXY;
+  process.env.TRUSTED_PROXY = "1";
+
+  const req = new Request("http://localhost", {
+    headers: { "x-forwarded-for": "spoofed, real-proxy" },
+  });
+  assert.equal(getClientIp(req), "real-proxy");
+
+  process.env.TRUSTED_PROXY = prev;
+});
+
+test("getClientIp => with TRUSTED_PROXY=1, prefers x-real-ip", () => {
+  const prev = process.env.TRUSTED_PROXY;
+  process.env.TRUSTED_PROXY = "1";
+
   const req = new Request("http://localhost", {
     headers: { "x-real-ip": "9.8.7.6" },
   });
   assert.equal(getClientIp(req), "9.8.7.6");
+
+  process.env.TRUSTED_PROXY = prev;
 });
 
-test("getClientIp => returns 'unknown' when no headers", () => {
+test("getClientIp => without proxy headers returns fingerprint", () => {
+  const prev = process.env.TRUSTED_PROXY;
+  delete process.env.TRUSTED_PROXY;
+
   const req = new Request("http://localhost");
-  assert.equal(getClientIp(req), "unknown");
-});
+  const ip = getClientIp(req);
+  assert.ok(ip.startsWith("fp:"));
 
-test("getClientIp => trims whitespace", () => {
-  const req = new Request("http://localhost", {
-    headers: { "x-forwarded-for": "  1.2.3.4  , 5.6.7.8" },
-  });
-  assert.equal(getClientIp(req), "1.2.3.4");
+  process.env.TRUSTED_PROXY = prev;
 });
 
 // =============================================================================

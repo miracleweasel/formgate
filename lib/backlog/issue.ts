@@ -1,7 +1,16 @@
 // lib/backlog/issue.ts
+import {
+  buildMappedSummary,
+  buildMappedDescription,
+  type BacklogFieldMapping,
+} from "@/lib/validation/backlogMapping";
+
 type Primitive = string | number | boolean | null;
 type Payload = Record<string, Primitive>;
 
+/**
+ * @deprecated Use buildMappedSummary from backlogMapping.ts instead
+ */
 export function buildIssueSummary(formName: string, formSlug: string) {
   const name = (formName || "Form").trim();
   const slug = (formSlug || "").trim();
@@ -24,6 +33,9 @@ export function formatTokyoTimestamp(now = new Date()) {
   return `${fmt.format(now)} JST`;
 }
 
+/**
+ * @deprecated Use buildMappedDescription from backlogMapping.ts instead
+ */
 export function buildIssueDescription(args: {
   formName: string;
   formSlug: string;
@@ -42,4 +54,39 @@ export function buildIssueDescription(args: {
     lines.push(`- ${k}: ${String(v)}`);
   }
   return lines.join("\n");
+}
+
+/**
+ * Build issue data using field mapping configuration
+ */
+export function buildMappedIssue(args: {
+  formName: string;
+  formSlug: string;
+  submissionId: string;
+  payload: Payload;
+  mapping?: BacklogFieldMapping | null;
+}): { summary: string; description: string; priorityId: number; issueTypeId?: number } {
+  const { formName, formSlug, submissionId, payload, mapping } = args;
+
+  const summary = buildMappedSummary(
+    mapping?.summary,
+    payload,
+    formName,
+    formSlug
+  );
+
+  const description = buildMappedDescription(
+    mapping?.description,
+    payload,
+    formName,
+    formSlug,
+    submissionId
+  );
+
+  return {
+    summary,
+    description,
+    priorityId: mapping?.priorityId ?? 3, // Default: Normal
+    issueTypeId: mapping?.issueTypeId,
+  };
 }
