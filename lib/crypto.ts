@@ -2,8 +2,29 @@
 import crypto from "crypto";
 import { ENV } from "./env";
 
+// Static salt for key derivation (application-specific, not secret)
+// This provides domain separation and prevents rainbow table attacks
+const KDF_SALT = Buffer.from("formgate-aes256-encryption-key-v1", "utf8");
+const KDF_ITERATIONS = 100000;
+
+// Cache derived key to avoid repeated PBKDF2 computation
+let cachedKey: Buffer | null = null;
+
+/**
+ * Derive a 32-byte encryption key using PBKDF2.
+ * Much stronger than simple SHA-256 hash.
+ */
 function key32(): Buffer {
-  return crypto.createHash("sha256").update(ENV.APP_ENC_KEY).digest();
+  if (cachedKey) return cachedKey;
+
+  cachedKey = crypto.pbkdf2Sync(
+    ENV.APP_ENC_KEY,
+    KDF_SALT,
+    KDF_ITERATIONS,
+    32, // 256 bits
+    "sha256"
+  );
+  return cachedKey;
 }
 
 export function encryptString(plain: string): string {

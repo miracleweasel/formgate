@@ -69,18 +69,31 @@
 
 ---
 
-## AUDIT À FAIRE
+## AUDIT RÉALISÉ
 
-### Phase 1 : Sécurité (CRITIQUE)
-- [ ] Auth/Session : cookie httpOnly/secure, CSRF, expiration, guards admin
-- [ ] API Backlog : token storage encrypted, pas côté client, rate limit, error handling
-- [ ] Formulaire public : validation Zod stricte, rate limit IP, CAPTCHA, SQL injection
-- [ ] Secrets : .env sécurisé, variables env, rotation tokens
-- [ ] Logs : pas de données sensibles loggées
+### Phase 1 : Sécurité (CRITIQUE) ✅ COMPLÉTÉ
+- [x] Auth/Session : cookie httpOnly/secure/sameSite=lax, expiration 7j, guards admin via getAdminEmail
+- [x] Password hashing : PBKDF2 100k iterations SHA-512 (lib/auth/password.ts)
+- [x] API Backlog : token storage AES-256-GCM encrypted (PBKDF2 key derivation), rate limit 500 req/h
+- [x] Formulaire public : validation Zod stricte, rate limit IP (10/min), max 50 champs, primitives only
+- [x] Secrets : .env sécurisé, APP_ENC_KEY pour encryption, pas de secrets côté client
+- [x] Logs : sanitized - pas de données sensibles loggées (erreurs sans stack traces)
+- [x] Security headers : CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff, etc. (proxy.ts)
+- [x] Tests sécurité : 166 tests passant, attack simulations (SQL injection, XSS, path traversal)
+
+### Phase 2 : MVP Features ✅ EN COURS
+- [x] Custom Fields : champs dynamiques (text, email, number, textarea, select)
+  - lib/validation/fields.ts - schémas Zod pour définition des champs
+  - lib/db/schema.ts - colonne `fields` JSONB sur table forms
+  - Validation dynamique côté serveur avec buildSubmissionSchema()
+  - Rendu dynamique dans public-form-client.tsx
+  - Backward compatible: DEFAULT_FIELDS (email + message) si pas de champs définis
+- [ ] Field Mapping Backlog : mapper les champs vers Backlog custom fields
+- [ ] Admin Field Builder UI : interface drag-and-drop pour configurer les champs
 
 ### Phase 2 : Architecture
-- [ ] Structure code : séparation, réutilisabilité, testabilité
-- [ ] Database : indexes, relations, migrations propres
+- [x] Structure code : séparation, réutilisabilité, testabilité
+- [x] Database : indexes, relations, migrations propres (drizzle/0004_add_form_fields.sql)
 - [ ] Performance : N+1 queries, caching, bundle size
 - [ ] Scalabilité : prêt 100/1000 clients, bottlenecks identifiés
 
@@ -145,8 +158,8 @@
 ## CHECKLIST PRÉ-LANCEMENT
 
 ### Technique
-- [ ] Tests sécurité passés
-- [ ] Rate limiting actif
+- [x] Tests sécurité passés (166 tests, attack simulations)
+- [x] Rate limiting actif (IP 10/min, Backlog API 500/h)
 - [ ] Error monitoring (Sentry)
 - [ ] Backups DB automatiques
 - [ ] SSL/HTTPS
@@ -189,4 +202,4 @@
 
 ---
 
-*Dernière mise à jour : 2 février 2026*
+*Dernière mise à jour : 5 février 2026*
