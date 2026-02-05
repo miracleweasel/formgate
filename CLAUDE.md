@@ -193,12 +193,18 @@
 
 ## INSTRUCTIONS CLAUDE CODE
 
-1. Lis ce fichier en entier avant toute action
+1. Lis ce fichier + README.md en entier avant toute action
 2. Fais un audit complet avant de modifier
 3. Priorise sécurité > stabilité > reste
 4. Commit + push chaque changement significatif
 5. Messages commit clairs : `fix(security): ...`, `feat(form): ...`, `refactor(api): ...`
 6. Si doute → demande avant d'agir
+7. **OBLIGATOIRE : Mettre à jour README.md à chaque changement significatif** avec :
+   - État actuel (features implémentées/en cours)
+   - Derniers commits (hash + description)
+   - Fichiers modifiés (avec leur rôle)
+   - Prochaines tâches (priorité + fichiers concernés)
+   - Prompts de reprise pour Claude (copy-paste ready)
 
 ---
 
