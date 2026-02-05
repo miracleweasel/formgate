@@ -25,6 +25,7 @@ export const en: TranslationSchema = {
     no: "No",
     optional: "optional",
     required: "required",
+    select: "Select...",
   },
 
   // ==========================================================================
@@ -190,6 +191,7 @@ export const en: TranslationSchema = {
     invalidInput: "Please check your input.",
     slugExists: "This slug is already in use.",
     required: "This field is required.",
+    invalidEmail: "Please enter a valid email address.",
   },
 
   // ==========================================================================

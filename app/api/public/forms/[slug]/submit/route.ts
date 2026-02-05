@@ -13,35 +13,17 @@ import { buildIssueDescription, buildIssueSummary } from "@/lib/backlog/issue";
 import { createBacklogIssueBestEffort } from "@/lib/backlog/client";
 import { decryptString } from "@/lib/crypto";
 import { getClientIp, rateLimitOrNull } from "@/lib/http/rateLimit";
+import {
+  buildSubmissionSchema,
+  DEFAULT_FIELDS,
+  type FormField,
+} from "@/lib/validation/fields";
 
 type Primitive = string | number | boolean | null;
 type Payload = Record<string, Primitive>;
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-
-function isPrimitive(v: unknown): v is Primitive {
-  return (
-    v === null ||
-    typeof v === "string" ||
-    typeof v === "number" ||
-    typeof v === "boolean"
-  );
-}
-
-function validatePayload(payload: unknown): payload is Payload {
-  if (!isPlainObject(payload)) return false;
-
-  const keys = Object.keys(payload);
-  if (keys.length === 0) return true;
-  if (keys.length > 50) return false;
-
-  for (const k of keys) {
-    const value = (payload as Record<string, unknown>)[k];
-    if (!isPrimitive(value)) return false;
-  }
-  return true;
 }
 
 function normalizeEmail(v: unknown): string | null {
@@ -67,7 +49,12 @@ export async function POST(
 
   // 1) form exists?
   const formRows = await db
-    .select({ id: forms.id, name: forms.name, slug: forms.slug })
+    .select({
+      id: forms.id,
+      name: forms.name,
+      slug: forms.slug,
+      fields: forms.fields,
+    })
     .from(forms)
     .where(eq(forms.slug, slug))
     .limit(1);
@@ -85,15 +72,38 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const payload = (body as any)?.payload;
-  if (!validatePayload(payload)) {
+  const rawPayload = (body as any)?.payload;
+  if (!isPlainObject(rawPayload)) {
     return NextResponse.json(
-      { error: "Invalid payload (object, <=50 keys, primitive values only)" },
+      { error: "Invalid payload (must be an object)" },
       { status: 400 }
     );
   }
 
-  // 3) create submission
+  // 3) Validate payload against field schema
+  // Use form's custom fields or fall back to default fields
+  const fieldDefs: FormField[] =
+    form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS;
+
+  const submissionSchema = buildSubmissionSchema(fieldDefs);
+  const validationResult = submissionSchema.safeParse(rawPayload);
+
+  if (!validationResult.success) {
+    const firstError = validationResult.error.issues[0];
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        field: firstError?.path[0] ?? null,
+        message: firstError?.message ?? "Invalid input",
+      },
+      { status: 400 }
+    );
+  }
+
+  // Cast validated data to Payload type (safe because Zod only allows primitives)
+  const payload = validationResult.data as Payload;
+
+  // 4) create submission
   const submissionId = crypto.randomUUID();
 
   await db.insert(submissions).values({
@@ -102,7 +112,7 @@ export async function POST(
     payload,
   });
 
-  // 4) Best-effort Backlog issue creation (NEVER block submit response)
+  // 5) Best-effort Backlog issue creation (NEVER block submit response)
   void (async () => {
     try {
       // Form-level setting enabled?

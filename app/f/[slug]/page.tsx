@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { t } from "@/lib/i18n";
+import { DEFAULT_FIELDS } from "@/lib/validation/fields";
 import PublicFormClient from "./public-form-client";
 
 // TODO: Check subscription status to hide branding for paid plans
@@ -22,6 +23,7 @@ export default async function PublicFormPage({
       name: forms.name,
       slug: forms.slug,
       description: forms.description,
+      fields: forms.fields,
     })
     .from(forms)
     .where(eq(forms.slug, slug))
@@ -46,7 +48,10 @@ export default async function PublicFormPage({
         ) : null}
       </header>
 
-      <PublicFormClient slug={form.slug} />
+      <PublicFormClient
+        slug={form.slug}
+        fields={form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS}
+      />
 
       {SHOW_BRANDING ? (
         <footer className="pt-4 text-center">

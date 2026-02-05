@@ -20,6 +20,7 @@ export interface TranslationSchema {
     no: string;
     optional: string;
     required: string;
+    select: string;
   };
 
   nav: {
@@ -161,6 +162,7 @@ export interface TranslationSchema {
     invalidInput: string;
     slugExists: string;
     required: string;
+    invalidEmail: string;
   };
 
   landing: {

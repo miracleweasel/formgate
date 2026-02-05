@@ -1,11 +1,13 @@
 // lib/db/schema.ts
 import { pgTable, uuid, text, timestamp, jsonb, index, boolean } from "drizzle-orm/pg-core";
+import type { FormField } from "@/lib/validation/fields";
 
 export const forms = pgTable("forms", {
   id: uuid("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
+  fields: jsonb("fields").$type<FormField[]>().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

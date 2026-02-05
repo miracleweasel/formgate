@@ -8,6 +8,7 @@ import { slugify } from "@/lib/forms/utils";
 import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
 import { unauthorized, internalError, jsonError } from "@/lib/http/errors";
 import { CreateFormSchema } from "@/lib/validation/forms";
+import { DEFAULT_FIELDS } from "@/lib/validation/fields";
 
 export async function GET(req: Request) {
   if (!(await requireAdminFromRequest(req))) return unauthorized();
@@ -29,13 +30,16 @@ export async function POST(req: Request) {
     return jsonError(400, msg);
   }
 
-  const { name, slug: rawSlug, description } = parsed.data;
+  const { name, slug: rawSlug, description, fields } = parsed.data;
 
   const finalSlug = rawSlug
     ? slugify(rawSlug)
     : slugify(name);
 
   if (!finalSlug) return jsonError(400, "slug is invalid");
+
+  // Use provided fields or default to email+message
+  const finalFields = fields ?? DEFAULT_FIELDS;
 
   try {
     const id = crypto.randomUUID();
@@ -47,6 +51,7 @@ export async function POST(req: Request) {
         name,
         slug: finalSlug,
         description: description || null,
+        fields: finalFields,
       })
       .returning();
 
