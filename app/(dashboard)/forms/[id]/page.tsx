@@ -53,6 +53,9 @@ export default async function FormDetailPage(ctx: Ctx) {
           <Link href="/forms" className="btn btn-secondary btn-sm">
             {t.common.back}
           </Link>
+          <Link href={`/forms/${form.id}/edit`} className="btn btn-secondary btn-sm">
+            {t.common.edit}
+          </Link>
           <DeleteButton id={form.id} />
         </div>
       </div>

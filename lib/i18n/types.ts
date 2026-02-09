@@ -193,6 +193,52 @@ export interface TranslationSchema {
     invalidEmail: string;
   };
 
+  fieldBuilder: {
+    title: string;
+    addField: string;
+    removeField: string;
+    moveUp: string;
+    moveDown: string;
+    fieldCount: string;
+    maxFieldsReached: string;
+    // Types
+    typeText: string;
+    typeEmail: string;
+    typeNumber: string;
+    typeTextarea: string;
+    typeSelect: string;
+    // Props
+    fieldName: string;
+    fieldLabel: string;
+    fieldRequired: string;
+    fieldPlaceholder: string;
+    minLength: string;
+    maxLength: string;
+    minValue: string;
+    maxValue: string;
+    // Select
+    options: string;
+    optionValue: string;
+    optionLabel: string;
+    addOption: string;
+    removeOption: string;
+    // Preview
+    showPreview: string;
+    hidePreview: string;
+    previewTitle: string;
+    // Validation errors
+    nameRequired: string;
+    nameInvalid: string;
+    nameDuplicate: string;
+    labelRequired: string;
+    optionsRequired: string;
+    optionEmpty: string;
+    // Actions
+    saved: string;
+    saving: string;
+    saveFailed: string;
+  };
+
   landing: {
     hero: {
       title: string;

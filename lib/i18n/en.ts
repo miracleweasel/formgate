@@ -223,6 +223,55 @@ export const en: TranslationSchema = {
   },
 
   // ==========================================================================
+  // Field Builder
+  // ==========================================================================
+  fieldBuilder: {
+    title: "Field Settings",
+    addField: "Add Field",
+    removeField: "Remove",
+    moveUp: "Move Up",
+    moveDown: "Move Down",
+    fieldCount: "Fields",
+    maxFieldsReached: "Maximum fields (20) reached",
+    // Types
+    typeText: "Text",
+    typeEmail: "Email",
+    typeNumber: "Number",
+    typeTextarea: "Textarea",
+    typeSelect: "Select",
+    // Props
+    fieldName: "Field Name",
+    fieldLabel: "Label",
+    fieldRequired: "Required",
+    fieldPlaceholder: "Placeholder",
+    minLength: "Min Length",
+    maxLength: "Max Length",
+    minValue: "Min Value",
+    maxValue: "Max Value",
+    // Select
+    options: "Options",
+    optionValue: "Value",
+    optionLabel: "Label",
+    addOption: "Add Option",
+    removeOption: "Remove",
+    // Preview
+    showPreview: "Show Preview",
+    hidePreview: "Hide Preview",
+    previewTitle: "Preview",
+    // Validation errors
+    nameRequired: "Field name is required",
+    nameInvalid: "Field name must start with a letter and contain only letters, numbers, underscores",
+    nameDuplicate: "Duplicate field name",
+    labelRequired: "Label is required",
+    optionsRequired: "At least one option is required",
+    optionEmpty: "Option value and label are required",
+    // Actions
+    saved: "Saved",
+    saving: "Saving...",
+    saveFailed: "Failed to save",
+  },
+
+  // ==========================================================================
   // Landing Page
   // ==========================================================================
   landing: {

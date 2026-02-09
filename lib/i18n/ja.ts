@@ -223,6 +223,55 @@ export const ja: TranslationSchema = {
   },
 
   // ==========================================================================
+  // Field Builder
+  // ==========================================================================
+  fieldBuilder: {
+    title: "フィールド設定",
+    addField: "フィールド追加",
+    removeField: "削除",
+    moveUp: "上へ",
+    moveDown: "下へ",
+    fieldCount: "フィールド数",
+    maxFieldsReached: "フィールドの上限（20個）に達しました",
+    // Types
+    typeText: "テキスト",
+    typeEmail: "メール",
+    typeNumber: "数値",
+    typeTextarea: "テキストエリア",
+    typeSelect: "選択",
+    // Props
+    fieldName: "フィールド名",
+    fieldLabel: "ラベル",
+    fieldRequired: "必須",
+    fieldPlaceholder: "プレースホルダー",
+    minLength: "最小文字数",
+    maxLength: "最大文字数",
+    minValue: "最小値",
+    maxValue: "最大値",
+    // Select
+    options: "選択肢",
+    optionValue: "値",
+    optionLabel: "表示名",
+    addOption: "選択肢を追加",
+    removeOption: "削除",
+    // Preview
+    showPreview: "プレビュー表示",
+    hidePreview: "プレビュー非表示",
+    previewTitle: "プレビュー",
+    // Validation errors
+    nameRequired: "フィールド名は必須です",
+    nameInvalid: "フィールド名は英字で始まり、英数字とアンダースコアのみ使用可能です",
+    nameDuplicate: "フィールド名が重複しています",
+    labelRequired: "ラベルは必須です",
+    optionsRequired: "少なくとも1つの選択肢が必要です",
+    optionEmpty: "選択肢の値と表示名は必須です",
+    // Actions
+    saved: "保存しました",
+    saving: "保存中...",
+    saveFailed: "保存に失敗しました",
+  },
+
+  // ==========================================================================
   // Landing Page
   // ==========================================================================
   landing: {

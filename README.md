@@ -20,7 +20,7 @@ pnpm build                  # Production build
 
 ---
 
-## Current State (5 Feb 2026)
+## Current State (9 Feb 2026)
 
 ### Implemented Features
 
@@ -30,6 +30,7 @@ pnpm build                  # Production build
 | **Password Hashing** | ✅ PBKDF2 100k iter | `lib/auth/password.ts` |
 | **Form CRUD** | ✅ Done | `app/api/forms/route.ts`, `app/api/forms/[id]/route.ts` |
 | **Custom Fields** | ✅ Done | `lib/validation/fields.ts`, `lib/db/schema.ts` |
+| **Admin Field Builder UI** | ✅ Done | `components/field-builder/`, `app/(dashboard)/forms/[id]/edit/` |
 | **Field Mapping Backlog** | ✅ Done | `lib/validation/backlogMapping.ts`, `lib/backlog/issue.ts` |
 | **Public Form Render** | ✅ Dynamic | `app/f/[slug]/public-form-client.tsx` |
 | **Form Submission** | ✅ Done | `app/api/public/forms/[slug]/submit/route.ts` |
@@ -41,14 +42,13 @@ pnpm build                  # Production build
 | **CSRF Protection** | ✅ Done | Origin/Referer validation in `proxy.ts` |
 | **Encryption** | ✅ AES-256-GCM | `lib/crypto.ts` (PBKDF2 key derivation) |
 | **Security Headers** | ✅ Done | `proxy.ts` (CSP, X-Frame-Options, Permissions-Policy, etc.) |
-| **i18n** | ✅ JA/EN | `lib/i18n/` (includes field mapping UI translations) |
-| **Tests** | ✅ 173+ passing | `test/` (includes attacker-perspective security tests) |
+| **i18n** | ✅ JA/EN | `lib/i18n/` (includes field builder translations) |
+| **Tests** | ✅ 300 passing | `test/` (includes attacker-perspective security tests) |
 
 ### Pending Features
 
 | Feature | Priority | Notes |
 |---------|----------|-------|
-| **Admin Field Builder UI** | High | Visual drag-drop interface for fields |
 | **Stripe Integration** | Medium | Billing, subscriptions (replace LemonSqueezy) |
 | **Webhooks** | Low | Notify external systems on submit |
 | **Error Monitoring** | Low | Sentry integration |
@@ -73,6 +73,7 @@ formgate/
 │   ├── (dashboard)/           # Admin pages (protected)
 │   │   ├── forms/             # Form management
 │   │   │   ├── [id]/          # Form detail, submissions, integrations
+│   │   │   │   ├── edit/      # Form field builder UI
 │   │   │   │   └── integrations/backlog/  # Backlog settings + field mapping UI
 │   │   │   └── new/           # Create form
 │   │   └── billing/           # Subscription management
@@ -228,6 +229,8 @@ integration_backlog_form_settings (
 - `lib/db/schema.ts` - forms.fields JSONB column
 - `app/f/[slug]/public-form-client.tsx` - Dynamic field rendering
 - `app/api/public/forms/[slug]/submit/route.ts` - Dynamic validation
+- `components/field-builder/` - Admin field builder UI components
+- `app/(dashboard)/forms/[id]/edit/page.tsx` - Form edit page
 
 ---
 
@@ -343,12 +346,13 @@ LEMONSQUEEZY_API_KEY=...
 ## Testing
 
 ```bash
-pnpm test                    # Run all 173+ tests
+pnpm test                    # Run all 300 tests
 pnpm test -- --grep "field"  # Run specific tests
 ```
 
 ### Test Categories
 - `test/fields.test.ts` - Custom fields validation (23 tests)
+- `test/fieldBuilder.test.ts` - Field builder client-side validation (47 tests)
 - `test/backlog.mapping.test.ts` - Field mapping functions and schemas (47 tests)
 - `test/security.exploits.test.ts` - Attacker-perspective security tests (38 tests)
 - `test/security.comprehensive.test.ts` - Security comprehensive tests
@@ -379,11 +383,11 @@ pnpm drizzle-kit studio      # Open Drizzle Studio
 ```bash
 # Current state
 git log --oneline -5
+# aebdf33 feat(backlog): add field mapping + security hardening
 # 11637c4 docs(claude): add mandatory README update instruction
 # 2f07c28 docs: comprehensive README with technical state and resume instructions
 # 4e8fb53 fix(config): correct drizzle schema path
 # 4f89f66 feat(forms): add custom fields support
-# 366696d fix(security): enhance crypto KDF and add security headers
 ```
 
 ---
@@ -399,27 +403,19 @@ git log --oneline -5
 
 ### Next Tasks (Priority Order)
 
-1. **Admin Field Builder UI** (High)
-   - Visual interface to configure form fields
-   - Files: `app/(dashboard)/forms/[id]/edit/`, new `components/FieldBuilder.tsx`
-   - Drag-drop reordering, field type selection, live preview
-
-2. **Stripe Integration** (Medium)
+1. **Stripe Integration** (Medium)
    - Replace LemonSqueezy with Stripe
    - Checkout, webhooks, subscription management
    - Files: `app/api/billing/`
 
-3. **Error Monitoring** (Low)
+2. **Error Monitoring** (Low)
    - Sentry integration for production error tracking
 
 ### Useful Prompts
 
 ```
 "Continue implementing FormGate. Read CLAUDE.md and README.md first.
-Current state: field mapping done, security hardened. Next: Admin Field Builder UI."
-
-"Add Field Builder UI to FormGate admin. Allow drag-drop field
-configuration with live preview. Read lib/validation/fields.ts for field types."
+Current state: Field builder UI done, all features complete. Next: Stripe Integration."
 
 "Implement Stripe billing for FormGate. Plans: Free (1 form),
 Starter (5 forms, 2980 JPY/mo), Pro (unlimited, 9800 JPY/mo).
@@ -445,4 +441,4 @@ Proprietary. All rights reserved.
 
 ---
 
-*Last updated: 5 February 2026*
+*Last updated: 9 February 2026*

@@ -79,14 +79,14 @@
 - [x] Secrets : .env sécurisé, APP_ENC_KEY pour encryption, pas de secrets côté client
 - [x] Logs : sanitized - pas de données sensibles loggées (erreurs sans stack traces)
 - [x] Security headers : CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff, etc. (proxy.ts)
-- [x] Tests sécurité : 173+ tests passant, attack simulations (SQL injection, XSS, path traversal, IP spoofing, CSRF, billing bypass)
+- [x] Tests sécurité : 300 tests passant, attack simulations (SQL injection, XSS, path traversal, IP spoofing, CSRF, billing bypass)
 - [x] CSRF protection : Origin/Referer validation sur toutes les mutations (proxy.ts)
 - [x] Billing enforcement : limites form count + submissions/mois côté serveur (lib/billing/planLimits.ts)
 - [x] IP extraction hardened : proxy headers ignorés sans TRUSTED_PROXY=1 (anti-spoofing)
 - [x] Middleware coverage : /api/integrations/* et /api/billing/* protégés auth
 - [x] Public form GET rate limited (30/min anti-enumeration)
 
-### Phase 2 : MVP Features ✅ EN COURS
+### Phase 2 : MVP Features ✅ COMPLÉTÉ
 - [x] Custom Fields : champs dynamiques (text, email, number, textarea, select)
   - lib/validation/fields.ts - schémas Zod pour définition des champs
   - lib/db/schema.ts - colonne `fields` JSONB sur table forms
@@ -100,7 +100,12 @@
   - BacklogSettingsClient.tsx - UI complète pour configurer le mapping
   - drizzle/0005_add_backlog_field_mapping.sql - migration field_mapping JSONB
   - 47 tests unitaires (test/backlog.mapping.test.ts)
-- [ ] Admin Field Builder UI : interface drag-and-drop pour configurer les champs
+- [x] Admin Field Builder UI : interface pour configurer les champs
+  - components/field-builder/ - Composants UI (FormEditClient, FieldList, FieldEditor, SelectOptionsEditor, FormPreview)
+  - app/(dashboard)/forms/[id]/edit/page.tsx - Page d'édition
+  - lib/i18n/types.ts, ja.ts, en.ts - Traductions fieldBuilder
+  - test/fieldBuilder.test.ts - Tests client-side validation
+  - Fonctionnalités: add/remove/reorder fields, type-specific options, live preview, validation temps réel
 
 ### Phase 2 : Architecture
 - [x] Structure code : séparation, réutilisabilité, testabilité
@@ -221,4 +226,4 @@
 
 ---
 
-*Dernière mise à jour : 5 février 2026*
+*Dernière mise à jour : 9 février 2026*
