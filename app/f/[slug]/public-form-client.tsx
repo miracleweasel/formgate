@@ -114,28 +114,27 @@ export default function PublicFormClient({ slug, fields }: Props) {
 
   if (done) {
     return (
-      <section
-        className="card"
-        style={{
-          borderColor: "var(--color-success-300)",
-          background: "var(--color-success-50)",
-        }}
-      >
-        <p
-          className="font-medium"
-          style={{ color: "var(--color-success-700)" }}
+      <div className="public-form-success animate-scale-in">
+        <div className="public-form-success-icon">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2
+          className="text-xl font-semibold mb-2"
+          style={{ color: "var(--color-neutral-900)" }}
         >
           {t.publicForm.thankYou}
-        </p>
-        <p className="text-sm" style={{ color: "var(--color-success-600)" }}>
+        </h2>
+        <p style={{ color: "var(--color-neutral-500)" }}>
           {t.publicForm.thankYouMessage}
         </p>
-      </section>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="card space-y-4">
+    <form onSubmit={onSubmit} className="space-y-5">
       {fields.map((field) => (
         <DynamicField
           key={field.name}
@@ -148,12 +147,19 @@ export default function PublicFormClient({ slug, fields }: Props) {
       ))}
 
       {errors._form && (
-        <p className="text-sm" style={{ color: "var(--color-error-500)" }}>
-          {errors._form}
-        </p>
+        <div className="alert alert-error">
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{errors._form}</span>
+        </div>
       )}
 
-      <button type="submit" disabled={submitting} className="btn btn-primary">
+      <button
+        type="submit"
+        disabled={submitting}
+        className="btn btn-primary btn-lg w-full"
+      >
         {submitting ? t.publicForm.submitting : t.publicForm.submit}
       </button>
     </form>
@@ -177,11 +183,10 @@ function DynamicField({
   const inputId = `field-${field.name}`;
 
   return (
-    <div className="space-y-1">
+    <div className="form-field">
       <label
-        className="text-sm font-medium"
+        className="form-label"
         htmlFor={inputId}
-        style={{ color: "var(--color-neutral-700)" }}
       >
         {field.label}
         {field.required && (
@@ -189,10 +194,9 @@ function DynamicField({
         )}
         {!field.required && (
           <span
-            className="font-normal"
-            style={{ color: "var(--color-neutral-500)" }}
+            className="font-normal text-sm ml-1"
+            style={{ color: "var(--color-neutral-400)" }}
           >
-            {" "}
             ({t.common.optional})
           </span>
         )}
@@ -201,7 +205,7 @@ function DynamicField({
       {field.type === "textarea" ? (
         <textarea
           id={inputId}
-          className="input min-h-[120px]"
+          className={`input ${error ? "input-error" : ""}`}
           value={String(value ?? "")}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder || ""}
@@ -210,7 +214,7 @@ function DynamicField({
       ) : field.type === "select" ? (
         <select
           id={inputId}
-          className="input"
+          className={`input ${error ? "input-error" : ""}`}
           value={String(value ?? "")}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
@@ -225,7 +229,7 @@ function DynamicField({
       ) : (
         <input
           id={inputId}
-          className="input"
+          className={`input ${error ? "input-error" : ""}`}
           type={field.type}
           value={value ?? ""}
           onChange={(e) =>
@@ -243,9 +247,7 @@ function DynamicField({
       )}
 
       {error && (
-        <p className="text-sm" style={{ color: "var(--color-error-500)" }}>
-          {error}
-        </p>
+        <p className="form-error">{error}</p>
       )}
     </div>
   );

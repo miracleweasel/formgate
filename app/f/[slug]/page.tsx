@@ -33,38 +33,48 @@ export default async function PublicFormPage({
 
   if (!form) {
     return (
-      <main className="mx-auto max-w-xl p-6" style={{ background: "var(--color-neutral-50)" }}>
-        <h1 className="text-xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>{t.errors.notFound}</h1>
+      <main className="public-form-container">
+        <div className="public-form-card text-center">
+          <div className="text-4xl mb-4">🔍</div>
+          <h1 className="text-xl font-semibold mb-2" style={{ color: "var(--color-neutral-900)" }}>
+            {t.errors.notFound}
+          </h1>
+          <p className="text-sm" style={{ color: "var(--color-neutral-500)" }}>
+            このフォームは存在しないか、削除されました。
+          </p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-xl p-6 space-y-4 min-h-screen" style={{ background: "var(--color-neutral-50)" }}>
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>{form.name}</h1>
-        {form.description ? (
-          <p className="text-sm" style={{ color: "var(--color-neutral-600)" }}>{form.description}</p>
-        ) : null}
-      </header>
+    <main className="public-form-container">
+      <div className="public-form-card">
+        <header className="mb-8">
+          <h1 className="public-form-title">{form.name}</h1>
+          {form.description && (
+            <p className="public-form-description">{form.description}</p>
+          )}
+        </header>
 
-      <PublicFormClient
-        slug={form.slug}
-        fields={form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS}
-      />
+        <PublicFormClient
+          slug={form.slug}
+          fields={form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS}
+        />
 
-      {SHOW_BRANDING ? (
-        <footer className="pt-4 text-center">
-          <Link
-            href="/"
-            className="text-xs transition-colors"
-            style={{ color: "var(--color-neutral-400)" }}
-            target="_blank"
-          >
-            {t.publicForm.poweredBy}
-          </Link>
-        </footer>
-      ) : null}
+        {SHOW_BRANDING && (
+          <footer className="mt-8 pt-6 text-center" style={{ borderTop: "1px solid var(--color-neutral-100)" }}>
+            <Link
+              href="/"
+              className="text-xs transition-opacity hover:opacity-70"
+              style={{ color: "var(--color-neutral-400)" }}
+              target="_blank"
+            >
+              {t.publicForm.poweredBy}
+            </Link>
+          </footer>
+        )}
+      </div>
     </main>
   );
 }
