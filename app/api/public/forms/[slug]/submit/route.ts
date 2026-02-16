@@ -18,7 +18,7 @@ import {
   DEFAULT_FIELDS,
   type FormField,
 } from "@/lib/validation/fields";
-import { canSubmit } from "@/lib/billing/planLimits";
+import { insertSubmissionIfAllowed } from "@/lib/billing/planLimits";
 
 type Primitive = string | number | boolean | null;
 type Payload = Record<string, Primitive>;
@@ -81,19 +81,7 @@ export async function POST(
     );
   }
 
-  // 3) Billing enforcement: check monthly submission limit
-  const adminEmail = process.env.ADMIN_EMAIL;
-  if (adminEmail) {
-    const check = await canSubmit(adminEmail);
-    if (!check.allowed) {
-      return NextResponse.json(
-        { error: "Monthly submission limit reached" },
-        { status: 429 }
-      );
-    }
-  }
-
-  // 4) Validate payload against field schema
+  // 3) Validate payload against field schema
   // Use form's custom fields or fall back to default fields
   const fieldDefs: FormField[] =
     form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS;
@@ -116,14 +104,30 @@ export async function POST(
   // Cast validated data to Payload type (safe because Zod only allows primitives)
   const payload = validationResult.data as Payload;
 
-  // 4) create submission
+  // 4) Atomic billing check + submission insert (prevents race conditions)
   const submissionId = crypto.randomUUID();
+  const adminEmail = process.env.ADMIN_EMAIL;
 
-  await db.insert(submissions).values({
-    id: submissionId,
-    formId: form.id,
-    payload,
-  });
+  if (adminEmail) {
+    const result = await insertSubmissionIfAllowed(adminEmail, {
+      id: submissionId,
+      formId: form.id,
+      payload,
+    });
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: result.reason },
+        { status: 429 }
+      );
+    }
+  } else {
+    // No billing enforcement — insert directly
+    await db.insert(submissions).values({
+      id: submissionId,
+      formId: form.id,
+      payload,
+    });
+  }
 
   // 5) Best-effort Backlog issue creation (NEVER block submit response)
   void (async () => {

@@ -49,3 +49,24 @@ export async function createCheckoutUrl(email: string) {
   const json = await res.json();
   return json.data.attributes.url as string;
 }
+
+/**
+ * Get the LemonSqueezy customer portal URL for subscription management.
+ * Returns null if no subscription ID is found.
+ */
+export async function getCustomerPortalUrl(lsSubscriptionId: string): Promise<string | null> {
+  const apiKey = getEnv("LEMONSQUEEZY_API_KEY");
+
+  const res = await fetch(`${API_BASE}/subscriptions/${lsSubscriptionId}`, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: "application/vnd.api+json",
+    },
+  });
+
+  if (!res.ok) return null;
+
+  const json = await res.json();
+  const urls = json.data?.attributes?.urls;
+  return (urls?.customer_portal as string) ?? null;
+}

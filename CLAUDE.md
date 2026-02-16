@@ -110,6 +110,14 @@
 ### Phase 2 : Architecture
 - [x] Structure code : séparation, réutilisabilité, testabilité
 - [x] Database : indexes, relations, migrations propres (drizzle/0004_add_form_fields.sql)
+- [x] Race conditions : transactions atomiques pour forms + submissions (planLimits.ts)
+- [x] Branding serveur : vérification subscription côté serveur (app/f/[slug]/page.tsx)
+- [x] Billing env validation : 503 clair si LemonSqueezy pas configuré
+- [x] Pages légales : CGU + Politique de confidentialité (app/terms/, app/privacy/)
+- [x] SEO metadata : titre JP, description, lang="ja" (app/layout.tsx)
+- [x] Error pages : 404 + 500 en japonais (app/error.tsx, app/not-found.tsx)
+- [x] Billing UI : comparaison plans, barres d'usage, portail client (app/(dashboard)/billing/)
+- [x] Dead code cleanup : lib/db.ts supprimé, pg désinstallé
 - [ ] Performance : N+1 queries, caching, bundle size
 - [ ] Scalabilité : prêt 100/1000 clients, bottlenecks identifiés
 
@@ -226,4 +234,4 @@
 
 ---
 
-*Dernière mise à jour : 9 février 2026*
+*Dernière mise à jour : 14 février 2026*

@@ -283,8 +283,8 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style={{ color: "var(--color-neutral-500)" }}>
           <div>{t.landing.footer.copyright}</div>
           <div className="flex gap-6">
-            <a href="#" className="hover:underline">{t.landing.footer.terms}</a>
-            <a href="#" className="hover:underline">{t.landing.footer.privacy}</a>
+            <a href="/terms" className="hover:underline">{t.landing.footer.terms}</a>
+            <a href="/privacy" className="hover:underline">{t.landing.footer.privacy}</a>
           </div>
         </div>
       </footer>

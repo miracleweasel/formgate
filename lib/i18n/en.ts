@@ -124,6 +124,7 @@ export const en: TranslationSchema = {
     thankYou: "Thank you!",
     thankYouMessage: "Your message has been received.",
     poweredBy: "Powered by FormGate",
+    formNotFound: "This form does not exist or has been deleted.",
   },
 
   // ==========================================================================
@@ -204,6 +205,13 @@ export const en: TranslationSchema = {
     enterprise: "Enterprise",
     upgrade: "Upgrade",
     manage: "Manage Plan",
+    usage: "Usage",
+    formsUsed: "Forms",
+    submissionsUsed: "Submissions this month",
+    unlimited: "Unlimited",
+    billingNotConfigured: "Billing is not configured. Please contact the administrator.",
+    manageSubscription: "Manage Subscription",
+    perMonth: "/month",
   },
 
   // ==========================================================================

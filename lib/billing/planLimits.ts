@@ -3,8 +3,9 @@
 
 import { db } from "@/lib/db";
 import { forms, submissions } from "@/lib/db/schema";
-import { sql, and, gte } from "drizzle-orm";
+import { sql, gte } from "drizzle-orm";
 import { getSubscriptionStatus } from "./subscription";
+import type { FormField } from "@/lib/validation/fields";
 
 export type PlanId = "free" | "starter" | "pro" | "enterprise";
 
@@ -88,4 +89,77 @@ export async function canSubmit(adminEmail: string): Promise<
   }
 
   return { allowed: true };
+}
+
+/**
+ * Atomically check submission limit AND insert in a single transaction.
+ * Prevents race conditions where N concurrent requests all pass the check.
+ * Returns { ok: true } or { ok: false, reason } on limit exceeded.
+ */
+export async function insertSubmissionIfAllowed(
+  adminEmail: string,
+  values: { id: string; formId: string; payload: Record<string, unknown> }
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const status = await getSubscriptionStatus(adminEmail);
+  const plan = resolvePlan(status);
+  const limits = getLimits(plan);
+
+  // Unlimited plan — skip transaction overhead
+  if (limits.maxSubmissionsPerMonth === Infinity) {
+    await db.insert(submissions).values(values);
+    return { ok: true };
+  }
+
+  return await db.transaction(async (tx) => {
+    const now = new Date();
+    const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+    const [row] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(submissions)
+      .where(gte(submissions.createdAt, firstOfMonth));
+
+    const current = row?.count ?? 0;
+
+    if (current >= limits.maxSubmissionsPerMonth) {
+      return { ok: false as const, reason: "Monthly submission limit reached" };
+    }
+
+    await tx.insert(submissions).values(values);
+    return { ok: true as const };
+  });
+}
+
+/**
+ * Atomically check form limit AND insert in a single transaction.
+ * Prevents race conditions on concurrent form creation.
+ */
+export async function insertFormIfAllowed(
+  adminEmail: string,
+  values: { id: string; name: string; slug: string; description: string | null; fields: FormField[] }
+): Promise<{ ok: true; form: typeof forms.$inferSelect } | { ok: false; current: number; max: number }> {
+  const status = await getSubscriptionStatus(adminEmail);
+  const plan = resolvePlan(status);
+  const limits = getLimits(plan);
+
+  // Unlimited plan — skip transaction overhead
+  if (limits.maxForms === Infinity) {
+    const [form] = await db.insert(forms).values(values).returning();
+    return { ok: true, form };
+  }
+
+  return await db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(forms);
+
+    const current = row?.count ?? 0;
+
+    if (current >= limits.maxForms) {
+      return { ok: false as const, current, max: limits.maxForms };
+    }
+
+    const [form] = await tx.insert(forms).values(values).returning();
+    return { ok: true as const, form };
+  });
 }

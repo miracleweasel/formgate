@@ -104,6 +104,7 @@ export interface TranslationSchema {
     thankYou: string;
     thankYouMessage: string;
     poweredBy: string;
+    formNotFound: string;
   };
 
   integrations: {
@@ -178,6 +179,13 @@ export interface TranslationSchema {
     enterprise: string;
     upgrade: string;
     manage: string;
+    usage: string;
+    formsUsed: string;
+    submissionsUsed: string;
+    unlimited: string;
+    billingNotConfigured: string;
+    manageSubscription: string;
+    perMonth: string;
   };
 
   errors: {

@@ -124,6 +124,7 @@ export const ja: TranslationSchema = {
     thankYou: "ありがとうございます",
     thankYouMessage: "メッセージを受け付けました。",
     poweredBy: "Powered by FormGate",
+    formNotFound: "このフォームは存在しないか、削除されました。",
   },
 
   // ==========================================================================
@@ -204,6 +205,13 @@ export const ja: TranslationSchema = {
     enterprise: "Enterprise",
     upgrade: "アップグレード",
     manage: "プラン管理",
+    usage: "使用状況",
+    formsUsed: "フォーム",
+    submissionsUsed: "今月の送信数",
+    unlimited: "無制限",
+    billingNotConfigured: "決済システムが設定されていません。管理者にお問い合わせください。",
+    manageSubscription: "サブスクリプション管理",
+    perMonth: "/月",
   },
 
   // ==========================================================================

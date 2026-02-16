@@ -20,7 +20,7 @@ pnpm build                  # Production build
 
 ---
 
-## Current State (9 Feb 2026)
+## Current State (14 Feb 2026)
 
 ### Implemented Features
 
@@ -37,7 +37,12 @@ pnpm build                  # Production build
 | **Backlog Connection** | ✅ Done | `lib/backlog/client.ts` |
 | **Backlog Auto-Issue** | ✅ Done | Non-blocking on submit, with field mapping |
 | **Backlog Project Meta** | ✅ Done | `app/api/integrations/backlog/project-meta/route.ts` |
-| **Billing Enforcement** | ✅ Done | `lib/billing/planLimits.ts` (form count + submission limits) |
+| **Billing Enforcement** | ✅ Hardened | `lib/billing/planLimits.ts` (atomic transactions, race-condition safe) |
+| **Billing UI** | ✅ Done | `app/(dashboard)/billing/page.tsx` (plan comparison, usage bars, portal) |
+| **Branding (server-side)** | ✅ Done | `app/f/[slug]/page.tsx` (subscription check, not client-side) |
+| **Legal Pages** | ✅ Done | `app/terms/page.tsx`, `app/privacy/page.tsx` |
+| **Error Pages** | ✅ Done | `app/error.tsx`, `app/not-found.tsx` |
+| **SEO Metadata** | ✅ Done | `app/layout.tsx` (Japanese, proper title/description) |
 | **Rate Limiting** | ✅ Hardened | IP 10/min submit, 30/min read, Backlog 500/h |
 | **CSRF Protection** | ✅ Done | Origin/Referer validation in `proxy.ts` |
 | **Encryption** | ✅ AES-256-GCM | `lib/crypto.ts` (PBKDF2 key derivation) |
@@ -49,9 +54,9 @@ pnpm build                  # Production build
 
 | Feature | Priority | Notes |
 |---------|----------|-------|
-| **Stripe Integration** | Medium | Billing, subscriptions (replace LemonSqueezy) |
+| **LemonSqueezy Deploy** | High | Configure store/variant IDs, webhook secret, deploy for public URL |
+| **Error Monitoring** | Medium | Sentry integration |
 | **Webhooks** | Low | Notify external systems on submit |
-| **Error Monitoring** | Low | Sentry integration |
 
 ---
 
@@ -82,7 +87,7 @@ formgate/
 │   │   ├── forms/             # Form CRUD API (billing enforced)
 │   │   ├── public/forms/[slug]/ # Public submission API (rate limited + billing)
 │   │   ├── integrations/      # Backlog connection + project-meta
-│   │   └── billing/           # Stripe webhooks (auth protected)
+│   │   └── billing/           # LemonSqueezy checkout, portal, webhooks (auth protected)
 │   ├── f/[slug]/              # Public form page
 │   └── login/                 # Login page
 ├── lib/
@@ -264,9 +269,9 @@ integration_backlog_form_settings (
 - Applied to both public and admin endpoints
 
 ### Billing Enforcement (`lib/billing/planLimits.ts`)
-- `canCreateForm()`: enforces form count limits per plan
-- `canSubmit()`: enforces monthly submission limits per plan
-- Checked server-side on every form creation and submission
+- `insertFormIfAllowed()`: atomic transaction — check + insert form (race-condition safe)
+- `insertSubmissionIfAllowed()`: atomic transaction — check + insert submission (race-condition safe)
+- `canCreateForm()` / `canSubmit()`: read-only checks (for display purposes)
 - Free plan: 1 form, 50 submissions/month
 
 ### Security Headers (`proxy.ts`)
@@ -415,11 +420,10 @@ git log --oneline -5
 
 ```
 "Continue implementing FormGate. Read CLAUDE.md and README.md first.
-Current state: Field builder UI done, all features complete. Next: Stripe Integration."
+Current state: Production hardening done. Next: LemonSqueezy deploy config."
 
-"Implement Stripe billing for FormGate. Plans: Free (1 form),
-Starter (5 forms, 2980 JPY/mo), Pro (unlimited, 9800 JPY/mo).
-Replace LemonSqueezy. Read lib/billing/planLimits.ts for plan enforcement."
+"Configure LemonSqueezy for FormGate. Need: store ID, variant ID, webhook secret.
+Read lib/billing/lemonsqueezy.ts and app/api/billing/ for current implementation."
 ```
 
 ---
@@ -441,4 +445,4 @@ Proprietary. All rights reserved.
 
 ---
 
-*Last updated: 9 February 2026*
+*Last updated: 14 February 2026*

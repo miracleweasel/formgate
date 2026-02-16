@@ -5,10 +5,8 @@ import { forms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { t } from "@/lib/i18n";
 import { DEFAULT_FIELDS } from "@/lib/validation/fields";
+import { getSubscriptionStatus } from "@/lib/billing/subscription";
 import PublicFormClient from "./public-form-client";
-
-// TODO: Check subscription status to hide branding for paid plans
-const SHOW_BRANDING = true;
 
 export default async function PublicFormPage({
   params,
@@ -31,6 +29,11 @@ export default async function PublicFormPage({
 
   const form = rows[0];
 
+  // Server-side branding: free plans show "Powered by FormGate"
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const subStatus = adminEmail ? await getSubscriptionStatus(adminEmail) : "inactive";
+  const showBranding = subStatus !== "active";
+
   if (!form) {
     return (
       <main className="public-form-container">
@@ -40,7 +43,7 @@ export default async function PublicFormPage({
             {t.errors.notFound}
           </h1>
           <p className="text-sm" style={{ color: "var(--color-neutral-500)" }}>
-            このフォームは存在しないか、削除されました。
+            {t.publicForm.formNotFound}
           </p>
         </div>
       </main>
@@ -62,7 +65,7 @@ export default async function PublicFormPage({
           fields={form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS}
         />
 
-        {SHOW_BRANDING && (
+        {showBranding && (
           <footer className="mt-8 pt-6 text-center" style={{ borderTop: "1px solid var(--color-neutral-100)" }}>
             <Link
               href="/"

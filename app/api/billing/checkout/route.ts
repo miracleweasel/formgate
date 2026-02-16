@@ -5,6 +5,7 @@ import { getAdminEmail } from "@/lib/auth/admin";
 import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
 import { unauthorized, internalError } from "@/lib/http/errors";
 import { getClientIp, rateLimitOrNull } from "@/lib/http/rateLimit";
+import { validateBillingEnv } from "@/lib/env";
 
 export async function POST(req: Request) {
   if (!(await requireAdminFromRequest(req))) return unauthorized();
@@ -19,8 +20,17 @@ export async function POST(req: Request) {
   });
   if (limited) return limited;
 
+  // Early check: all billing env vars must be configured
+  const envCheck = validateBillingEnv();
+  if (!envCheck.ok) {
+    console.error("[billing/checkout] Billing not configured");
+    return NextResponse.json(
+      { error: "Billing is not configured. Please contact the administrator." },
+      { status: 503 }
+    );
+  }
+
   try {
-    // On prend l'email admin “source de vérité” (même que l’auth)
     const email = await getAdminEmail();
     if (!email || !email.trim()) {
       console.error("[billing/checkout] Missing ADMIN_EMAIL env var");
