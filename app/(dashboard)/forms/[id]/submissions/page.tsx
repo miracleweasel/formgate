@@ -1,13 +1,11 @@
 // app/(dashboard)/forms/[id]/submissions/page.tsx
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 
 import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { fetchSubmissions } from "@/lib/db/queries";
 
 import SubmissionsListClient from "./SubmissionsListClient";
 import ExportCsvButtonClient from "./ExportCsvButtonClient";
@@ -18,20 +16,6 @@ type SearchParams = {
 
 function pickOne(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
-}
-
-type SubmissionRow = {
-  id: string;
-  created_at: string;
-  payload: Record<string, unknown>;
-};
-
-async function getBaseUrl(): Promise<string> {
-  const h = await headers();
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (!host) return "http://localhost:3000";
-  return `${proto}://${host}`;
 }
 
 function clampDebugLimit(v: string | undefined): number {
@@ -58,19 +42,14 @@ export default async function Page(props: {
   const form = formRows[0] ?? null;
   if (!form) notFound();
 
-  const qs = new URLSearchParams();
-  qs.set("limit", String(limit));
+  const data = await fetchSubmissions(id, { limit });
 
-  const baseUrl = await getBaseUrl();
-  const res = await fetch(`${baseUrl}/api/forms/${id}/submissions?${qs.toString()}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`API failed: ${res.status}`);
-
-  const data = (await res.json()) as {
-    items: SubmissionRow[];
-    nextCursor: string | null;
-  };
+  // Serialize Date objects to strings for the client component
+  const serializedItems = data.items.map((item) => ({
+    id: item.id,
+    created_at: item.created_at instanceof Date ? item.created_at.toISOString() : String(item.created_at),
+    payload: item.payload as Record<string, unknown>,
+  }));
 
   return (
     <div className="p-6 space-y-6">
@@ -95,7 +74,7 @@ export default async function Page(props: {
 
       <SubmissionsListClient
         formId={id}
-        initialItems={data.items ?? []}
+        initialItems={serializedItems}
         initialNextCursor={data.nextCursor ?? null}
         limit={limit}
       />

@@ -20,7 +20,7 @@ pnpm build                  # Production build
 
 ---
 
-## Current State (14 Feb 2026)
+## Current State (16 Feb 2026)
 
 ### Implemented Features
 
@@ -48,6 +48,9 @@ pnpm build                  # Production build
 | **Encryption** | ✅ AES-256-GCM | `lib/crypto.ts` (PBKDF2 key derivation) |
 | **Security Headers** | ✅ Done | `proxy.ts` (CSP, X-Frame-Options, Permissions-Policy, etc.) |
 | **i18n** | ✅ JA/EN | `lib/i18n/` (includes field builder translations) |
+| **Subscription Cache** | ✅ 60s TTL | `lib/billing/subscription.ts` (in-memory, invalidated on webhook) |
+| **DB Query Layer** | ✅ Done | `lib/db/queries.ts` (reusable fetchSubmissions) |
+| **Server-only Guard** | ✅ Done | `lib/db/index.ts` (prevents client bundle bloat) |
 | **Tests** | ✅ 300 passing | `test/` (includes attacker-perspective security tests) |
 
 ### Pending Features
@@ -94,7 +97,7 @@ formgate/
 │   ├── auth/                  # Session, password, admin guards
 │   ├── backlog/               # Backlog API client, issue builder
 │   ├── billing/               # Plan limits enforcement
-│   ├── db/                    # Drizzle schema, connection
+│   ├── db/                    # Drizzle schema, connection, queries
 │   ├── http/                  # Rate limiting (hardened), error helpers
 │   ├── i18n/                  # Translations (ja, en)
 │   └── validation/            # Zod schemas (forms, fields, backlogMapping)
@@ -388,11 +391,11 @@ pnpm drizzle-kit studio      # Open Drizzle Studio
 ```bash
 # Current state
 git log --oneline -5
+# xxxxxxx perf: subscription cache, direct DB query, server-only guard
+# 07ade75 feat(security,billing,legal): production hardening
+# 1f8bf47 style(ui): redesign UI inspired by Fillout.com
+# a7c3fbc feat(forms): add admin field builder UI
 # aebdf33 feat(backlog): add field mapping + security hardening
-# 11637c4 docs(claude): add mandatory README update instruction
-# 2f07c28 docs: comprehensive README with technical state and resume instructions
-# 4e8fb53 fix(config): correct drizzle schema path
-# 4f89f66 feat(forms): add custom fields support
 ```
 
 ---
@@ -408,12 +411,11 @@ git log --oneline -5
 
 ### Next Tasks (Priority Order)
 
-1. **Stripe Integration** (Medium)
-   - Replace LemonSqueezy with Stripe
-   - Checkout, webhooks, subscription management
+1. **LemonSqueezy Deploy** (High)
+   - Configure store/variant IDs, webhook secret, deploy for public URL
    - Files: `app/api/billing/`
 
-2. **Error Monitoring** (Low)
+2. **Error Monitoring** (Medium)
    - Sentry integration for production error tracking
 
 ### Useful Prompts
@@ -445,4 +447,4 @@ Proprietary. All rights reserved.
 
 ---
 
-*Last updated: 14 February 2026*
+*Last updated: 16 February 2026*

@@ -118,7 +118,7 @@
 - [x] Error pages : 404 + 500 en japonais (app/error.tsx, app/not-found.tsx)
 - [x] Billing UI : comparaison plans, barres d'usage, portail client (app/(dashboard)/billing/)
 - [x] Dead code cleanup : lib/db.ts supprimé, pg désinstallé
-- [ ] Performance : N+1 queries, caching, bundle size
+- [x] Performance : subscription cache 60s, direct DB query submissions, server-only guard
 - [ ] Scalabilité : prêt 100/1000 clients, bottlenecks identifiés
 
 ### Phase 3 : Produit/UX
