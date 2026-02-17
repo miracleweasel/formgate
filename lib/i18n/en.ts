@@ -59,7 +59,7 @@ export const en: TranslationSchema = {
   forms: {
     title: "Forms",
     newForm: "New Form",
-    noForms: "No forms yet.",
+    noForms: "No forms yet",
     noFormsHint: "Click \"New Form\" to create your first form.",
     createTitle: "Create Form",
     formName: "Form Name",
@@ -109,6 +109,9 @@ export const en: TranslationSchema = {
     range: "Range",
     loadMore: "Load more",
     goToTop: "Back to top",
+    date: "Date",
+    email: "Email",
+    message: "Message",
   },
 
   // ==========================================================================
@@ -285,29 +288,41 @@ export const en: TranslationSchema = {
   landing: {
     hero: {
       title: "Form → Backlog Ticket, Automatically.",
-      subtitle: "Setup in 5 minutes. No code required.",
+      subtitle: "Turn public form submissions into Backlog issues automatically. Setup in 5 minutes, no code required.",
       cta: "Get Started Free",
       ctaLogin: "Login",
       badge: "Official Backlog API",
+    },
+    trustBar: {
+      api: "Official Backlog API",
+      setup: "5-minute setup",
+      serverSide: "Server-side processing",
+    },
+    flow: {
+      form: "Form Submit",
+      process: "Auto Process",
+      ticket: "Backlog Issue",
     },
     features: {
       title: "Simple 3-Step Setup",
       step1: {
         title: "Create Form",
-        description: "Create a form in 30 seconds from dashboard",
+        description: "Create a form in 30 seconds from the dashboard. Custom fields are fully configurable.",
       },
       step2: {
         title: "Connect Backlog",
-        description: "Paste your API key and you're connected",
+        description: "Paste your API key and you're connected. Project and field mapping made easy.",
       },
       step3: {
         title: "Auto-Ticketing",
-        description: "Submissions instantly create issues",
+        description: "When a form is submitted, a Backlog issue is instantly created. No more manual copying.",
       },
     },
     usedBy: "Trusted by",
     pricing: {
       title: "Pricing",
+      popular: "Popular",
+      enterprise: "Enterprise (custom plans): Contact us",
       free: {
         name: "Free",
         price: "$0",
@@ -327,10 +342,16 @@ export const en: TranslationSchema = {
         features: ["Unlimited forms", "5,000 submissions/month", "Priority support"],
       },
     },
+    finalCta: {
+      title: "Get started today",
+      subtitle: "Setup in 5 minutes. No credit card required.",
+    },
     footer: {
       copyright: "© 2026 FormGate",
       terms: "Terms of Service",
       privacy: "Privacy Policy",
+      product: "Product",
+      legal: "Legal",
     },
   },
 };

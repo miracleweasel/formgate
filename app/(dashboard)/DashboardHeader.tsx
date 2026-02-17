@@ -38,11 +38,14 @@ export default function DashboardHeader({ email }: Props) {
     return pathname === href || pathname.startsWith(href + "/");
   }
 
+  // Get user initial for avatar
+  const initial = email ? email[0].toUpperCase() : "?";
+
   return (
-    <header className="border-b bg-white">
-      <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+    <header style={{ borderBottom: "1px solid var(--color-neutral-150)", background: "var(--color-neutral-0)" }}>
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/forms" className="font-semibold text-lg">
+        <Link href="/forms" className="font-semibold text-lg" style={{ color: "var(--color-neutral-900)" }}>
           {t.common.appName}
         </Link>
 
@@ -52,26 +55,54 @@ export default function DashboardHeader({ email }: Props) {
             <Link
               key={item.href}
               href={item.href}
-              className={`px-3 py-2 text-sm rounded-md transition-colors ${
+              className="px-4 py-2 text-sm transition-colors relative"
+              style={
                 isActive(item.href)
-                  ? "bg-gray-100 font-medium"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+                  ? {
+                      color: "var(--color-accent-600)",
+                      fontWeight: 500,
+                    }
+                  : {
+                      color: "var(--color-neutral-500)",
+                    }
+              }
             >
               {item.label}
+              {isActive(item.href) && (
+                <span
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full"
+                  style={{
+                    width: "60%",
+                    background: "var(--color-accent-600)",
+                  }}
+                />
+              )}
             </Link>
           ))}
         </nav>
 
         {/* User / Logout */}
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-600 hidden sm:inline">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+            style={{
+              background: "var(--color-accent-100)",
+              color: "var(--color-accent-700)",
+            }}
+            title={email}
+          >
+            {initial}
+          </div>
+          <span
+            className="text-sm hidden sm:inline max-w-[140px] truncate"
+            style={{ color: "var(--color-neutral-500)" }}
+          >
             {email}
           </span>
           <button
             onClick={handleLogout}
             disabled={loggingOut}
-            className="px-3 py-1.5 text-sm rounded-md border hover:bg-gray-50 disabled:opacity-50"
+            className="btn btn-tertiary btn-sm"
           >
             {loggingOut ? "..." : t.nav.logout}
           </button>

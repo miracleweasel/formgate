@@ -92,6 +92,9 @@ export interface TranslationSchema {
     range: string;
     loadMore: string;
     goToTop: string;
+    date: string;
+    email: string;
+    message: string;
   };
 
   publicForm: {
@@ -255,6 +258,16 @@ export interface TranslationSchema {
       ctaLogin: string;
       badge: string;
     };
+    trustBar: {
+      api: string;
+      setup: string;
+      serverSide: string;
+    };
+    flow: {
+      form: string;
+      process: string;
+      ticket: string;
+    };
     features: {
       title: string;
       step1: {
@@ -273,6 +286,8 @@ export interface TranslationSchema {
     usedBy: string;
     pricing: {
       title: string;
+      popular: string;
+      enterprise: string;
       free: {
         name: string;
         price: string;
@@ -292,10 +307,16 @@ export interface TranslationSchema {
         features: readonly string[];
       };
     };
+    finalCta: {
+      title: string;
+      subtitle: string;
+    };
     footer: {
       copyright: string;
       terms: string;
       privacy: string;
+      product: string;
+      legal: string;
     };
   };
 }

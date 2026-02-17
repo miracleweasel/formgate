@@ -6,19 +6,24 @@ export default function Home() {
   return (
     <div className="min-h-screen" style={{ background: "var(--color-neutral-0)" }}>
       {/* Header */}
-      <header style={{ borderBottom: "1px solid var(--color-neutral-200)" }}>
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="font-semibold text-xl" style={{ color: "var(--color-neutral-900)" }}>
+      <header style={{ borderBottom: "1px solid var(--color-neutral-100)" }}>
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="font-semibold text-xl" style={{ color: "var(--color-neutral-900)" }}>
             {t.common.appName}
-          </div>
-          <Link href="/login" className="btn btn-secondary btn-sm">
-            {t.landing.hero.ctaLogin}
           </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="btn btn-tertiary btn-sm">
+              {t.landing.hero.ctaLogin}
+            </Link>
+            <Link href="/login" className="btn btn-primary btn-sm">
+              {t.landing.hero.cta}
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="py-24 md:py-32">
+      <section className="py-32 md:py-40">
         <div className="max-w-3xl mx-auto px-6 text-center">
           {/* Trust Badge */}
           <div className="flex justify-center mb-8">
@@ -32,54 +37,102 @@ export default function Home() {
 
           {/* Headline */}
           <h1
-            className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight"
-            style={{ color: "var(--color-neutral-900)", lineHeight: "1.1" }}
+            className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight"
+            style={{ color: "var(--color-neutral-900)", lineHeight: "1.08" }}
           >
             {t.landing.hero.title}
           </h1>
 
           {/* Subtitle */}
           <p
-            className="mt-6 text-lg md:text-xl max-w-xl mx-auto"
+            className="mt-8 text-lg md:text-xl max-w-xl mx-auto"
             style={{ color: "var(--color-neutral-500)", lineHeight: "1.7" }}
           >
             {t.landing.hero.subtitle}
           </p>
 
           {/* CTA */}
-          <div className="mt-10">
+          <div className="mt-12 flex items-center justify-center gap-4">
             <Link href="/login" className="btn btn-primary btn-xl">
               {t.landing.hero.cta}
             </Link>
           </div>
 
+          {/* Trust bar */}
+          <div
+            className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm"
+            style={{ color: "var(--color-neutral-400)" }}
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" style={{ color: "var(--color-success-500)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              {t.landing.trustBar.api}
+            </span>
+            <span style={{ color: "var(--color-neutral-200)" }}>|</span>
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" style={{ color: "var(--color-success-500)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              {t.landing.trustBar.setup}
+            </span>
+            <span style={{ color: "var(--color-neutral-200)" }}>|</span>
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" style={{ color: "var(--color-success-500)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              {t.landing.trustBar.serverSide}
+            </span>
+          </div>
+
           {/* Visual Flow */}
           <div className="mt-20 flex items-center justify-center gap-3 md:gap-6">
-            <div className="card card-elevated px-5 py-4 text-center">
-              <div className="text-2xl mb-2">📝</div>
+            <div className="card card-elevated px-6 py-5 text-center">
+              <div
+                className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center"
+                style={{ background: "var(--color-accent-100)", color: "var(--color-accent-600)" }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
               <div className="text-sm font-medium" style={{ color: "var(--color-neutral-700)" }}>
-                フォーム送信
+                {t.landing.flow.form}
               </div>
             </div>
             <svg className="w-6 h-6 flex-shrink-0" style={{ color: "var(--color-neutral-300)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
-            <div className="card card-elevated px-5 py-4 text-center">
-              <div className="text-2xl mb-2">⚡</div>
+            <div className="card card-elevated px-6 py-5 text-center">
+              <div
+                className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center"
+                style={{ background: "var(--color-primary-100)", color: "var(--color-primary-600)" }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
               <div className="text-sm font-medium" style={{ color: "var(--color-neutral-700)" }}>
-                自動処理
+                {t.landing.flow.process}
               </div>
             </div>
             <svg className="w-6 h-6 flex-shrink-0" style={{ color: "var(--color-neutral-300)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
             <div
-              className="card card-elevated px-5 py-4 text-center"
+              className="card card-elevated px-6 py-5 text-center"
               style={{ background: "var(--color-success-50)" }}
             >
-              <div className="text-2xl mb-2">✅</div>
+              <div
+                className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center"
+                style={{ background: "var(--color-success-100)", color: "var(--color-success-600)" }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
               <div className="text-sm font-medium" style={{ color: "var(--color-success-700)" }}>
-                Backlog課題
+                {t.landing.flow.ticket}
               </div>
             </div>
           </div>
@@ -87,28 +140,30 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20" style={{ background: "var(--color-neutral-50)" }}>
-        <div className="max-w-5xl mx-auto px-6">
+      <section id="features" className="py-24" style={{ background: "var(--color-neutral-50)" }}>
+        <div className="max-w-6xl mx-auto px-6">
           <h2
-            className="text-2xl md:text-3xl font-bold text-center mb-16"
+            className="text-3xl md:text-4xl font-bold text-center mb-16"
             style={{ color: "var(--color-neutral-900)" }}
           >
             {t.landing.features.title}
           </h2>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {/* Step 1 */}
             <div className="card card-hover">
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center font-semibold mb-4"
-                style={{ background: "var(--color-accent-100)", color: "var(--color-accent-700)" }}
+                className="w-12 h-12 rounded-full flex items-center justify-center mb-5"
+                style={{ background: "var(--color-accent-100)", color: "var(--color-accent-600)" }}
               >
-                1
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
               </div>
               <h3 className="font-semibold text-lg mb-2" style={{ color: "var(--color-neutral-800)" }}>
                 {t.landing.features.step1.title}
               </h3>
-              <p style={{ color: "var(--color-neutral-500)", fontSize: "0.9375rem" }}>
+              <p style={{ color: "var(--color-neutral-500)", fontSize: "0.9375rem", lineHeight: "1.7" }}>
                 {t.landing.features.step1.description}
               </p>
             </div>
@@ -116,15 +171,17 @@ export default function Home() {
             {/* Step 2 */}
             <div className="card card-hover">
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center font-semibold mb-4"
-                style={{ background: "var(--color-accent-100)", color: "var(--color-accent-700)" }}
+                className="w-12 h-12 rounded-full flex items-center justify-center mb-5"
+                style={{ background: "var(--color-primary-100)", color: "var(--color-primary-600)" }}
               >
-                2
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
               </div>
               <h3 className="font-semibold text-lg mb-2" style={{ color: "var(--color-neutral-800)" }}>
                 {t.landing.features.step2.title}
               </h3>
-              <p style={{ color: "var(--color-neutral-500)", fontSize: "0.9375rem" }}>
+              <p style={{ color: "var(--color-neutral-500)", fontSize: "0.9375rem", lineHeight: "1.7" }}>
                 {t.landing.features.step2.description}
               </p>
             </div>
@@ -132,15 +189,17 @@ export default function Home() {
             {/* Step 3 */}
             <div className="card card-hover">
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center font-semibold mb-4"
-                style={{ background: "var(--color-accent-100)", color: "var(--color-accent-700)" }}
+                className="w-12 h-12 rounded-full flex items-center justify-center mb-5"
+                style={{ background: "var(--color-success-100)", color: "var(--color-success-600)" }}
               >
-                3
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
               <h3 className="font-semibold text-lg mb-2" style={{ color: "var(--color-neutral-800)" }}>
                 {t.landing.features.step3.title}
               </h3>
-              <p style={{ color: "var(--color-neutral-500)", fontSize: "0.9375rem" }}>
+              <p style={{ color: "var(--color-neutral-500)", fontSize: "0.9375rem", lineHeight: "1.7" }}>
                 {t.landing.features.step3.description}
               </p>
             </div>
@@ -149,30 +208,30 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section className="py-20" style={{ background: "var(--color-neutral-0)" }}>
-        <div className="max-w-5xl mx-auto px-6">
+      <section className="py-24" style={{ background: "var(--color-neutral-0)" }}>
+        <div className="max-w-6xl mx-auto px-6">
           <h2
-            className="text-2xl md:text-3xl font-bold text-center mb-16"
+            className="text-3xl md:text-4xl font-bold text-center mb-16"
             style={{ color: "var(--color-neutral-900)" }}
           >
             {t.landing.pricing.title}
           </h2>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {/* Free */}
-            <div className="card">
+            <div className="card" style={{ padding: "var(--space-10)" }}>
               <h3 className="font-semibold text-lg" style={{ color: "var(--color-neutral-800)" }}>
                 {t.landing.pricing.free.name}
               </h3>
-              <div className="mt-4 mb-6">
-                <span className="text-3xl font-bold" style={{ color: "var(--color-neutral-900)" }}>
+              <div className="mt-4 mb-8">
+                <span className="text-4xl font-bold" style={{ color: "var(--color-neutral-900)" }}>
                   {t.landing.pricing.free.price}
                 </span>
-                <span className="text-sm" style={{ color: "var(--color-neutral-500)" }}>
+                <span className="text-sm ml-1" style={{ color: "var(--color-neutral-500)" }}>
                   {t.landing.pricing.free.period}
                 </span>
               </div>
-              <ul className="space-y-3 mb-6">
+              <ul className="space-y-3 mb-8">
                 {t.landing.pricing.free.features.map((feature, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "var(--color-neutral-600)" }}>
                     <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "var(--color-success-500)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,30 +249,30 @@ export default function Home() {
             {/* Starter - Highlighted */}
             <div
               className="card relative"
-              style={{ border: "2px solid var(--color-accent-500)" }}
+              style={{ border: "2px solid var(--color-accent-500)", padding: "var(--space-10)" }}
             >
               <div
-                className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-medium"
+                className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 text-xs font-medium"
                 style={{
                   background: "var(--color-accent-600)",
                   color: "white",
                   borderRadius: "var(--radius-full)"
                 }}
               >
-                人気
+                {t.landing.pricing.popular}
               </div>
               <h3 className="font-semibold text-lg" style={{ color: "var(--color-neutral-800)" }}>
                 {t.landing.pricing.starter.name}
               </h3>
-              <div className="mt-4 mb-6">
-                <span className="text-3xl font-bold" style={{ color: "var(--color-neutral-900)" }}>
+              <div className="mt-4 mb-8">
+                <span className="text-4xl font-bold" style={{ color: "var(--color-neutral-900)" }}>
                   {t.landing.pricing.starter.price}
                 </span>
-                <span className="text-sm" style={{ color: "var(--color-neutral-500)" }}>
+                <span className="text-sm ml-1" style={{ color: "var(--color-neutral-500)" }}>
                   {t.landing.pricing.starter.period}
                 </span>
               </div>
-              <ul className="space-y-3 mb-6">
+              <ul className="space-y-3 mb-8">
                 {t.landing.pricing.starter.features.map((feature, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "var(--color-neutral-600)" }}>
                     <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "var(--color-success-500)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,19 +288,19 @@ export default function Home() {
             </div>
 
             {/* Pro */}
-            <div className="card">
+            <div className="card" style={{ padding: "var(--space-10)" }}>
               <h3 className="font-semibold text-lg" style={{ color: "var(--color-neutral-800)" }}>
                 {t.landing.pricing.pro.name}
               </h3>
-              <div className="mt-4 mb-6">
-                <span className="text-3xl font-bold" style={{ color: "var(--color-neutral-900)" }}>
+              <div className="mt-4 mb-8">
+                <span className="text-4xl font-bold" style={{ color: "var(--color-neutral-900)" }}>
                   {t.landing.pricing.pro.price}
                 </span>
-                <span className="text-sm" style={{ color: "var(--color-neutral-500)" }}>
+                <span className="text-sm ml-1" style={{ color: "var(--color-neutral-500)" }}>
                   {t.landing.pricing.pro.period}
                 </span>
               </div>
-              <ul className="space-y-3 mb-6">
+              <ul className="space-y-3 mb-8">
                 {t.landing.pricing.pro.features.map((feature, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "var(--color-neutral-600)" }}>
                     <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "var(--color-success-500)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,17 +315,25 @@ export default function Home() {
               </Link>
             </div>
           </div>
+
+          {/* Enterprise mention */}
+          <p className="text-center mt-8 text-sm" style={{ color: "var(--color-neutral-500)" }}>
+            {t.landing.pricing.enterprise}
+          </p>
         </div>
       </section>
 
       {/* Final CTA */}
-      <section className="py-20" style={{ background: "var(--color-accent-600)" }}>
+      <section
+        className="py-24"
+        style={{ background: "linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-accent-600) 100%)" }}
+      >
         <div className="max-w-2xl mx-auto px-6 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-            今すぐ始めよう
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            {t.landing.finalCta.title}
           </h2>
-          <p className="text-lg mb-8" style={{ color: "rgba(255,255,255,0.8)" }}>
-            5分でセットアップ完了。クレジットカード不要。
+          <p className="text-lg mb-10" style={{ color: "rgba(255,255,255,0.8)" }}>
+            {t.landing.finalCta.subtitle}
           </p>
           <Link
             href="/login"
@@ -280,11 +347,43 @@ export default function Home() {
 
       {/* Footer */}
       <footer style={{ background: "var(--color-neutral-50)" }}>
-        <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style={{ color: "var(--color-neutral-500)" }}>
-          <div>{t.landing.footer.copyright}</div>
-          <div className="flex gap-6">
-            <a href="/terms" className="hover:underline">{t.landing.footer.terms}</a>
-            <a href="/privacy" className="hover:underline">{t.landing.footer.privacy}</a>
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Brand */}
+            <div>
+              <div className="font-semibold text-lg mb-2" style={{ color: "var(--color-neutral-900)" }}>
+                {t.common.appName}
+              </div>
+              <p className="text-sm" style={{ color: "var(--color-neutral-500)" }}>
+                {t.common.tagline}
+              </p>
+            </div>
+            {/* Product */}
+            <div>
+              <div className="text-sm font-medium mb-3" style={{ color: "var(--color-neutral-700)" }}>
+                {t.landing.footer.product}
+              </div>
+              <div className="flex flex-col gap-2 text-sm" style={{ color: "var(--color-neutral-500)" }}>
+                <a href="#features" className="hover:underline">{t.landing.features.title}</a>
+                <a href="/login" className="hover:underline">{t.landing.hero.ctaLogin}</a>
+              </div>
+            </div>
+            {/* Legal */}
+            <div>
+              <div className="text-sm font-medium mb-3" style={{ color: "var(--color-neutral-700)" }}>
+                {t.landing.footer.legal}
+              </div>
+              <div className="flex flex-col gap-2 text-sm" style={{ color: "var(--color-neutral-500)" }}>
+                <a href="/terms" className="hover:underline">{t.landing.footer.terms}</a>
+                <a href="/privacy" className="hover:underline">{t.landing.footer.privacy}</a>
+              </div>
+            </div>
+          </div>
+          <div
+            className="mt-10 pt-6 text-sm text-center"
+            style={{ borderTop: "1px solid var(--color-neutral-200)", color: "var(--color-neutral-400)" }}
+          >
+            {t.landing.footer.copyright}
           </div>
         </div>
       </footer>

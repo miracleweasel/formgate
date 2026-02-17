@@ -55,17 +55,20 @@ export default function LoginClient() {
   }
 
   return (
-    <div className="public-form-container">
-      <div className="w-full max-w-sm">
+    <div
+      className="public-form-container"
+      style={{ background: "linear-gradient(145deg, #f8faff 0%, var(--color-neutral-100) 100%)" }}
+    >
+      <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-10">
           <Link href="/" className="text-2xl font-bold" style={{ color: "var(--color-neutral-900)" }}>
             {t.common.appName}
           </Link>
         </div>
 
         {/* Card */}
-        <div className="card card-elevated animate-scale-in">
+        <div className="card card-elevated animate-scale-in" style={{ padding: "var(--space-10)" }}>
           <h1 className="text-xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>
             {t.auth.loginTitle}
           </h1>
@@ -73,7 +76,7 @@ export default function LoginClient() {
             {t.auth.loginSubtitle}
           </p>
 
-          <form className="mt-8 space-y-5" onSubmit={onSubmit}>
+          <form className="mt-8 space-y-6" onSubmit={onSubmit}>
             <div className="form-field">
               <label className="form-label" htmlFor="email">
                 {t.auth.email}
@@ -126,7 +129,7 @@ export default function LoginClient() {
         </div>
 
         {/* Back to home */}
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center">
           <Link
             href="/"
             className="text-sm transition-colors"

@@ -174,88 +174,73 @@ export default function SubmissionsListClient(props: {
       ? t.submissions.noSubmissionsFiltered
       : t.submissions.noSubmissions;
 
+  const rangeButtons: { key: RangeKey; label: string }[] = [
+    { key: "", label: t.submissions.all },
+    { key: "today", label: t.submissions.today },
+    { key: "7d", label: t.submissions.last7Days },
+    { key: "30d", label: t.submissions.last30Days },
+  ];
+
   return (
-    <div className="space-y-4">
-      <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--color-neutral-500)" }}>
-        {t.submissions.filters}
-      </div>
-
-      {/* Sticky filter bar */}
+    <div className="space-y-6">
+      {/* Filter bar - white, clean */}
       <div
-        className="sticky top-0 z-20 -mx-6 px-6 py-3 shadow"
-        style={{ background: "var(--color-neutral-800)", borderBottom: "1px solid var(--color-neutral-700)" }}
+        className="card sticky top-16 z-20"
+        style={{ padding: "var(--space-4) var(--space-6)" }}
       >
-        <div className="px-6">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Range buttons */}
-            <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Range pills */}
+          <div className="flex items-center gap-1.5">
+            {rangeButtons.map((rb) => (
               <button
+                key={rb.key}
                 type="button"
                 className="btn btn-sm"
-                style={activeRange === ""
-                  ? { background: "var(--color-primary-500)", color: "white", borderColor: "var(--color-primary-500)" }
-                  : { background: "transparent", color: "var(--color-neutral-300)", borderColor: "var(--color-neutral-600)" }
+                style={
+                  activeRange === rb.key
+                    ? {
+                        background: "var(--color-accent-600)",
+                        color: "white",
+                        borderColor: "var(--color-accent-600)",
+                        borderRadius: "var(--radius-full)",
+                      }
+                    : {
+                        background: "var(--color-neutral-0)",
+                        color: "var(--color-neutral-600)",
+                        border: "1.5px solid var(--color-neutral-200)",
+                        borderRadius: "var(--radius-full)",
+                      }
                 }
-                onClick={() => setRange("")}
+                onClick={() => setRange(rb.key)}
                 disabled={loading}
               >
-                {t.submissions.all}
+                {rb.label}
               </button>
-              <button
-                type="button"
-                className="btn btn-sm"
-                style={activeRange === "today"
-                  ? { background: "var(--color-primary-500)", color: "white", borderColor: "var(--color-primary-500)" }
-                  : { background: "transparent", color: "var(--color-neutral-300)", borderColor: "var(--color-neutral-600)" }
-                }
-                onClick={() => setRange("today")}
-                disabled={loading}
-              >
-                {t.submissions.today}
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm"
-                style={activeRange === "7d"
-                  ? { background: "var(--color-primary-500)", color: "white", borderColor: "var(--color-primary-500)" }
-                  : { background: "transparent", color: "var(--color-neutral-300)", borderColor: "var(--color-neutral-600)" }
-                }
-                onClick={() => setRange("7d")}
-                disabled={loading}
-              >
-                {t.submissions.last7Days}
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm"
-                style={activeRange === "30d"
-                  ? { background: "var(--color-primary-500)", color: "white", borderColor: "var(--color-primary-500)" }
-                  : { background: "transparent", color: "var(--color-neutral-300)", borderColor: "var(--color-neutral-600)" }
-                }
-                onClick={() => setRange("30d")}
-                disabled={loading}
-              >
-                {t.submissions.last30Days}
-              </button>
-            </div>
+            ))}
+          </div>
 
-            {/* Email search */}
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                className="input"
-                style={{ width: "260px", maxWidth: "100%", fontSize: "0.875rem" }}
-                placeholder={t.submissions.searchByEmail}
-                value={inputEmail}
-                onChange={(e) => setInputEmail(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={onSearch}
-                disabled={loading}
-              >
-                {t.submissions.search}
-              </button>
+          {/* Separator */}
+          <div className="hidden md:block h-6 w-px" style={{ background: "var(--color-neutral-200)" }} />
+
+          {/* Email search */}
+          <div className="flex items-center gap-2">
+            <input
+              className="input"
+              style={{ width: "220px", maxWidth: "100%", fontSize: "0.875rem", padding: "8px 14px" }}
+              placeholder={t.submissions.searchByEmail}
+              value={inputEmail}
+              onChange={(e) => setInputEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && onSearch()}
+            />
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={onSearch}
+              disabled={loading}
+            >
+              {t.submissions.search}
+            </button>
+            {activeEmailLabel && (
               <button
                 type="button"
                 className="btn btn-tertiary btn-sm"
@@ -264,73 +249,97 @@ export default function SubmissionsListClient(props: {
               >
                 {t.submissions.clear}
               </button>
-            </div>
+            )}
+          </div>
 
-            {/* Counters / status */}
-            <div className="text-sm" style={{ color: "var(--color-neutral-400)" }}>
-              {t.submissions.loaded}: <span className="font-medium" style={{ color: "var(--color-neutral-200)" }}>{loadedCount}</span>
-              {hasMore ? <span className="ml-2">• {t.submissions.moreAvailable}</span> : <span className="ml-2">• {t.submissions.end}</span>}
-              {activeRangeLabel ? (
-                <>
-                  <span className="ml-2">• {t.submissions.range}:</span>{" "}
-                  <span className="font-medium" style={{ color: "var(--color-neutral-200)" }}>{activeRangeLabel}</span>
-                </>
-              ) : null}
-              {activeEmailLabel ? (
-                <>
-                  <span className="ml-2">• {t.auth.email}:</span>{" "}
-                  <span className="font-medium" style={{ color: "var(--color-neutral-200)" }}>{activeEmailLabel}</span>
-                </>
-              ) : null}
-            </div>
+          {/* Status */}
+          <div className="text-xs ml-auto" style={{ color: "var(--color-neutral-400)" }}>
+            {loadedCount}{" "}
+            {hasMore ? `• ${t.submissions.moreAvailable}` : `• ${t.submissions.end}`}
           </div>
         </div>
       </div>
 
-      {/* List */}
+      {/* Table */}
       {items.length === 0 ? (
-        <div className="text-sm" style={{ color: "var(--color-neutral-600)" }}>{emptyLabel}</div>
+        <div className="card">
+          <div className="empty-state" style={{ padding: "var(--space-10) var(--space-6)" }}>
+            <div className="empty-state-icon">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+            </div>
+            <div className="empty-state-title">{emptyLabel}</div>
+          </div>
+        </div>
       ) : (
-        <div className="space-y-3">
-          {items.map((s) => {
-            const payload = (s.payload ?? {}) as Record<string, unknown>;
-            const email =
-              typeof payload.email === "string" && payload.email.trim()
-                ? payload.email.trim()
-                : "—";
-            const message =
-              typeof payload.message === "string" && payload.message.trim()
-                ? payload.message.trim()
-                : "—";
+        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--color-neutral-150)" }}>
+                <th
+                  className="text-left px-6 py-3 font-medium text-xs uppercase tracking-wide"
+                  style={{ color: "var(--color-neutral-400)", background: "var(--color-neutral-50)" }}
+                >
+                  {t.submissions.date}
+                </th>
+                <th
+                  className="text-left px-6 py-3 font-medium text-xs uppercase tracking-wide"
+                  style={{ color: "var(--color-neutral-400)", background: "var(--color-neutral-50)" }}
+                >
+                  {t.submissions.email}
+                </th>
+                <th
+                  className="text-left px-6 py-3 font-medium text-xs uppercase tracking-wide"
+                  style={{ color: "var(--color-neutral-400)", background: "var(--color-neutral-50)" }}
+                >
+                  {t.submissions.message}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((s) => {
+                const payload = (s.payload ?? {}) as Record<string, unknown>;
+                const email =
+                  typeof payload.email === "string" && payload.email.trim()
+                    ? payload.email.trim()
+                    : "—";
+                const message =
+                  typeof payload.message === "string" && payload.message.trim()
+                    ? payload.message.trim()
+                    : "—";
 
-            return (
-              <div key={s.id} className="card" style={{ padding: "var(--space-3)" }}>
-                <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>{fmtDate(s.created_at)}</div>
-                <div className="text-sm" style={{ color: "var(--color-neutral-700)" }}>
-                  <div>
-                    <span className="font-medium">Email:</span> {email}
-                  </div>
-                  <div className="mt-1">
-                    <span className="font-medium">Message:</span>{" "}
-                    <span className="whitespace-pre-wrap">{message}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                return (
+                  <tr key={s.id} style={{ borderBottom: "1px solid var(--color-neutral-100)" }}>
+                    <td className="px-6 py-3.5 whitespace-nowrap" style={{ color: "var(--color-neutral-500)" }}>
+                      {fmtDate(s.created_at)}
+                    </td>
+                    <td className="px-6 py-3.5" style={{ color: "var(--color-neutral-700)" }}>
+                      {email}
+                    </td>
+                    <td className="px-6 py-3.5 max-w-sm truncate" style={{ color: "var(--color-neutral-600)" }}>
+                      {message}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
       {/* Load more */}
       {nextCursor ? (
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={loadMore}
-          disabled={loading}
-        >
-          {loading ? t.common.loading : t.submissions.loadMore}
-        </button>
+        <div className="text-center">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={loadMore}
+            disabled={loading}
+          >
+            {loading ? t.common.loading : t.submissions.loadMore}
+          </button>
+        </div>
       ) : null}
 
       {/* Go to top */}
@@ -338,11 +347,19 @@ export default function SubmissionsListClient(props: {
         <button
           type="button"
           onClick={goTop}
-          className="btn fixed bottom-6 right-6 z-20 shadow-lg"
-          style={{ background: "var(--color-neutral-0)", color: "var(--color-neutral-700)", borderRadius: "9999px" }}
+          className="btn fixed bottom-6 right-6 z-20"
+          style={{
+            background: "var(--color-neutral-0)",
+            color: "var(--color-neutral-700)",
+            borderRadius: "var(--radius-full)",
+            boxShadow: "var(--shadow-lg)",
+            border: "1px solid var(--color-neutral-200)",
+            padding: "10px 16px",
+            fontSize: "0.8125rem",
+          }}
           aria-label={t.submissions.goToTop}
         >
-          {t.submissions.goToTop}
+          ↑ {t.submissions.goToTop}
         </button>
       ) : null}
     </div>

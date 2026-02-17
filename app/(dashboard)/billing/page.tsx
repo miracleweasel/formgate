@@ -40,7 +40,7 @@ function UsageBar({ label, used, max }: { label: string; used: number; max: numb
   const isHigh = max ? percent >= 80 : false;
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <div className="flex justify-between text-sm">
         <span style={{ color: "var(--color-neutral-600)" }}>{label}</span>
         <span style={{ color: isHigh ? "var(--color-error-600)" : "var(--color-neutral-700)" }} className="font-medium">
@@ -118,9 +118,9 @@ export default function BillingPage() {
   const isActive = data?.status === "active";
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>
+    <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
+      <div className="page-header">
+        <h1 className="page-header-title">
           {t.billing.title}
         </h1>
         <button
@@ -134,7 +134,7 @@ export default function BillingPage() {
 
       {/* Usage */}
       {data?.usage && data?.limits && (
-        <div className="card space-y-4">
+        <div className="card space-y-5">
           <h2 className="font-medium" style={{ color: "var(--color-neutral-800)" }}>
             {t.billing.usage}
           </h2>
@@ -152,24 +152,25 @@ export default function BillingPage() {
       )}
 
       {/* Plan Comparison */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 gap-6">
         {PLANS.map((plan) => {
           const isCurrent = plan.id === currentPlan;
           return (
             <div
               key={plan.id}
               className="card relative"
-              style={
-                plan.highlight
+              style={{
+                padding: "var(--space-10)",
+                ...(plan.highlight
                   ? { border: "2px solid var(--color-accent-500)" }
                   : isCurrent
                     ? { border: "2px solid var(--color-success-500)" }
-                    : undefined
-              }
+                    : {}),
+              }}
             >
               {isCurrent && (
                 <div
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 text-xs font-medium rounded-full"
+                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-0.5 text-xs font-medium rounded-full"
                   style={{
                     background: "var(--color-success-500)",
                     color: "white",
@@ -181,15 +182,15 @@ export default function BillingPage() {
               <h3 className="font-semibold text-lg" style={{ color: "var(--color-neutral-800)" }}>
                 {plan.name}
               </h3>
-              <div className="mt-3 mb-4">
-                <span className="text-2xl font-bold" style={{ color: "var(--color-neutral-900)" }}>
+              <div className="mt-4 mb-6">
+                <span className="text-3xl font-bold" style={{ color: "var(--color-neutral-900)" }}>
                   {plan.price}
                 </span>
-                <span className="text-sm" style={{ color: "var(--color-neutral-500)" }}>
+                <span className="text-sm ml-1" style={{ color: "var(--color-neutral-500)" }}>
                   {t.billing.perMonth}
                 </span>
               </div>
-              <ul className="space-y-2 mb-5">
+              <ul className="space-y-3 mb-8">
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "var(--color-neutral-600)" }}>
                     <svg className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "var(--color-success-500)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,14 +202,14 @@ export default function BillingPage() {
               </ul>
 
               {isCurrent && isActive ? (
-                <button onClick={manageSubscription} className="btn btn-secondary w-full btn-sm">
+                <button onClick={manageSubscription} className="btn btn-secondary w-full">
                   {t.billing.manageSubscription}
                 </button>
               ) : !isCurrent && plan.id !== "free" && !isActive ? (
                 <button
                   onClick={subscribe}
                   disabled={checkoutLoading}
-                  className="btn btn-primary w-full btn-sm"
+                  className="btn btn-primary w-full"
                 >
                   {checkoutLoading ? "..." : t.billing.upgrade}
                 </button>

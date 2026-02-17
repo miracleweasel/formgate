@@ -59,7 +59,7 @@ export const ja: TranslationSchema = {
   forms: {
     title: "フォーム一覧",
     newForm: "新規作成",
-    noForms: "フォームがまだありません。",
+    noForms: "フォームがまだありません",
     noFormsHint: "「新規作成」ボタンからフォームを作成してください。",
     createTitle: "フォーム作成",
     formName: "フォーム名",
@@ -108,7 +108,10 @@ export const ja: TranslationSchema = {
     end: "終了",
     range: "期間",
     loadMore: "もっと見る",
-    goToTop: "↑ トップへ",
+    goToTop: "トップへ",
+    date: "日時",
+    email: "メール",
+    message: "メッセージ",
   },
 
   // ==========================================================================
@@ -285,29 +288,41 @@ export const ja: TranslationSchema = {
   landing: {
     hero: {
       title: "フォーム → Backlogチケット、自動で。",
-      subtitle: "5分でセットアップ。コードなし。",
+      subtitle: "公開フォームの送信を、Backlogの課題に自動変換。セットアップは5分、コード不要。",
       cta: "無料で始める",
       ctaLogin: "ログイン",
       badge: "Backlog公式API使用",
+    },
+    trustBar: {
+      api: "Backlog公式API使用",
+      setup: "5分セットアップ",
+      serverSide: "サーバーサイド処理",
+    },
+    flow: {
+      form: "フォーム送信",
+      process: "自動処理",
+      ticket: "Backlog課題",
     },
     features: {
       title: "シンプルな3ステップ",
       step1: {
         title: "フォーム作成",
-        description: "管理画面で30秒でフォームを作成",
+        description: "管理画面で30秒でフォームを作成。カスタムフィールドも自由に設定できます。",
       },
       step2: {
         title: "Backlog連携",
-        description: "APIキーを貼り付けて接続完了",
+        description: "APIキーを貼り付けて接続完了。プロジェクトやフィールドのマッピングも簡単。",
       },
       step3: {
         title: "自動チケット化",
-        description: "送信されると即座に課題作成",
+        description: "フォームが送信されると即座にBacklog課題を自動作成。もう手動コピーは不要。",
       },
     },
     usedBy: "導入企業",
     pricing: {
       title: "料金プラン",
+      popular: "人気",
+      enterprise: "Enterprise（カスタム対応）: お問い合わせください",
       free: {
         name: "Free",
         price: "¥0",
@@ -327,10 +342,16 @@ export const ja: TranslationSchema = {
         features: ["無制限", "月5,000件まで", "優先サポート"],
       },
     },
+    finalCta: {
+      title: "今すぐ始めよう",
+      subtitle: "5分でセットアップ完了。クレジットカード不要。",
+    },
     footer: {
       copyright: "© 2026 FormGate",
       terms: "利用規約",
       privacy: "プライバシーポリシー",
+      product: "プロダクト",
+      legal: "法的情報",
     },
   },
 };

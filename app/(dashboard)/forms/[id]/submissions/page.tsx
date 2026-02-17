@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { fetchSubmissions } from "@/lib/db/queries";
+import { t } from "@/lib/i18n";
 
 import SubmissionsListClient from "./SubmissionsListClient";
 import ExportCsvButtonClient from "./ExportCsvButtonClient";
@@ -52,23 +53,30 @@ export default async function Page(props: {
   }));
 
   return (
-    <div className="p-6 space-y-6">
-      <header className="space-y-1">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-xl font-semibold" style={{ color: "var(--color-neutral-900)" }}>{form.name}</h1>
-            <div className="text-sm" style={{ color: "var(--color-neutral-500)" }}>/{form.slug}</div>
-          </div>
-
-          <div className="pt-1">
-            <ExportCsvButtonClient formId={id} latestLimit={limit} />
-          </div>
+    <div className="max-w-6xl mx-auto p-6 md:p-8 space-y-6">
+      <header>
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm mb-4" style={{ color: "var(--color-neutral-400)" }}>
+          <Link href="/forms" className="hover:underline" style={{ color: "var(--color-neutral-500)" }}>
+            {t.forms.title}
+          </Link>
+          <span>/</span>
+          <Link href={`/forms/${id}`} className="hover:underline" style={{ color: "var(--color-neutral-500)" }}>
+            {form.name}
+          </Link>
+          <span>/</span>
+          <span style={{ color: "var(--color-neutral-700)" }}>{t.submissions.title}</span>
         </div>
 
-        <div className="pt-2">
-          <Link className="btn btn-tertiary btn-sm" href={`/forms/${id}`}>
-            ← Back to form
-          </Link>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="page-header-title">{t.submissions.title}</h1>
+            <div className="text-sm mt-1" style={{ color: "var(--color-neutral-400)" }}>
+              {form.name} — /{form.slug}
+            </div>
+          </div>
+
+          <ExportCsvButtonClient formId={id} latestLimit={limit} />
         </div>
       </header>
 

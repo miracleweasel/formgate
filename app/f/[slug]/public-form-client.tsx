@@ -134,7 +134,7 @@ export default function PublicFormClient({ slug, fields }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
+    <form onSubmit={onSubmit} className="space-y-6">
       {fields.map((field) => (
         <DynamicField
           key={field.name}
