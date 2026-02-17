@@ -20,7 +20,7 @@ pnpm build                  # Production build
 
 ---
 
-## Current State (16 Feb 2026)
+## Current State (17 Feb 2026)
 
 ### Implemented Features
 
@@ -47,7 +47,8 @@ pnpm build                  # Production build
 | **CSRF Protection** | ✅ Done | Origin/Referer validation in `proxy.ts` |
 | **Encryption** | ✅ AES-256-GCM | `lib/crypto.ts` (PBKDF2 key derivation) |
 | **Security Headers** | ✅ Done | `proxy.ts` (CSP, X-Frame-Options, Permissions-Policy, etc.) |
-| **i18n** | ✅ JA/EN | `lib/i18n/` (includes field builder translations) |
+| **UI/UX Redesign** | ✅ Done | Fillout.com-inspired aesthetic across all pages (Inter font, soft shadows, pill CTAs, grid layouts) |
+| **i18n** | ✅ JA/EN | `lib/i18n/` (includes field builder, landing, footer translations) |
 | **Subscription Cache** | ✅ 60s TTL | `lib/billing/subscription.ts` (in-memory, invalidated on webhook) |
 | **DB Query Layer** | ✅ Done | `lib/db/queries.ts` (reusable fetchSubmissions) |
 | **Server-only Guard** | ✅ Done | `lib/db/index.ts` (prevents client bundle bloat) |
@@ -70,6 +71,7 @@ pnpm build                  # Production build
 - **Database**: PostgreSQL (Supabase)
 - **ORM**: Drizzle
 - **Validation**: Zod
+- **Fonts**: Inter + Noto Sans JP (via `next/font/google`)
 - **Tests**: Node.js native `node:test`
 - **Package Manager**: pnpm
 
@@ -390,8 +392,9 @@ pnpm drizzle-kit studio      # Open Drizzle Studio
 
 ```bash
 # Current state
-git log --oneline -5
-# xxxxxxx perf: subscription cache, direct DB query, server-only guard
+git log --oneline -6
+# 0239997 style(ui): redesign all pages with Fillout.com-inspired aesthetic
+# 726b766 perf: subscription cache, direct DB query, server-only guard
 # 07ade75 feat(security,billing,legal): production hardening
 # 1f8bf47 style(ui): redesign UI inspired by Fillout.com
 # a7c3fbc feat(forms): add admin field builder UI
@@ -422,7 +425,7 @@ git log --oneline -5
 
 ```
 "Continue implementing FormGate. Read CLAUDE.md and README.md first.
-Current state: Production hardening done. Next: LemonSqueezy deploy config."
+Current state: UI/UX redesign done (Fillout.com style). Next: LemonSqueezy deploy config."
 
 "Configure LemonSqueezy for FormGate. Need: store ID, variant ID, webhook secret.
 Read lib/billing/lemonsqueezy.ts and app/api/billing/ for current implementation."
@@ -447,4 +450,4 @@ Proprietary. All rights reserved.
 
 ---
 
-*Last updated: 16 February 2026*
+*Last updated: 17 February 2026*
