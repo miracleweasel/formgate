@@ -123,9 +123,34 @@
 
 ### Phase 3 : Produit/UX
 - [ ] UI japonaise : conventions JP, terminologie, layout culturel
-- [ ] Onboarding : < 5 min réel, points friction, guidance
+- [x] Onboarding : checklist 3 étapes sur /forms, inline Backlog config, dismiss localStorage
+  - components/onboarding/OnboardingChecklist.tsx - Checklist dashboard (hasForms/hasBacklog/hasSubmissions)
+  - components/backlog/BacklogConnectionForm.tsx - Formulaire réutilisable connexion Backlog
+  - app/(dashboard)/settings/page.tsx + SettingsClient.tsx - Page settings dédiée
+  - proxy.ts - /settings protégé auth
+  - DashboardHeader.tsx - nav "Settings" ajouté
+  - i18n: sections onboarding + settings (JA/EN)
 - [ ] Copywriting : messages clairs JP, erreurs compréhensibles, CTAs efficaces
-- [ ] Analytics : tracking events, funnel conversion
+- [x] Analytics : Plausible script conditionnel (NEXT_PUBLIC_PLAUSIBLE_DOMAIN)
+
+### Phase 4 : Observabilité & Lancement
+- [x] Sentry : @sentry/nextjs, client/server/edge configs, global-error.tsx, beforeSend sanitization
+  - sentry.client.config.ts, sentry.server.config.ts, sentry.edge.config.ts
+  - app/global-error.tsx - capture + affichage erreur globale
+  - app/error.tsx - capture Sentry ajoutée
+  - next.config.ts - withSentryConfig conditionnel
+  - CSP mise à jour (connect-src: *.ingest.sentry.io)
+- [x] Analytics : Plausible script conditionnel dans app/layout.tsx
+  - CSP mise à jour (script-src + connect-src: plausible.io)
+  - .env.example mis à jour (NEXT_PUBLIC_SENTRY_DSN, NEXT_PUBLIC_PLAUSIBLE_DOMAIN)
+- [ ] Documentation JP : guide utilisateur, FAQ
+- [ ] Email templates : welcome, billing, erreurs
+- [ ] Copywriting polish : CTAs, messages d'erreur, guidance
+- [ ] LemonSqueezy finalization : STORE_ID, VARIANT_ID, webhook, deploy
+- [ ] Performance testing : load test, métriques < 3s
+- [ ] Backups DB automatiques (Supabase PITR)
+- [ ] Support email : channel dédié
+- [ ] Scalabilité audit : bottlenecks 100/1000 clients
 
 ---
 
@@ -186,24 +211,24 @@
 - [x] Rate limiting actif (IP 10/min submit, 30/min read, Backlog API 500/h)
 - [x] CSRF protection (proxy.ts)
 - [x] Billing enforcement server-side (lib/billing/planLimits.ts)
-- [ ] Error monitoring (Sentry)
+- [x] Error monitoring (Sentry) — @sentry/nextjs, client+server+edge configs, global-error.tsx
 - [ ] Backups DB automatiques
 - [ ] SSL/HTTPS
 - [ ] Performance < 3s load
 
 ### Produit
-- [ ] Onboarding testé
-- [ ] Documentation JP
+- [x] Onboarding : checklist 3 étapes + settings page + inline Backlog form
+- [ ] Documentation JP : guide utilisateur
 - [ ] FAQ rédigée
 - [ ] Email templates
-- [ ] Terms of Service JP
-- [ ] Privacy Policy (RGPD + JP)
+- [x] Terms of Service JP (app/terms/)
+- [x] Privacy Policy (app/privacy/)
 
 ### Business
-- [ ] Stripe configuré
+- [ ] LemonSqueezy finalisé (STORE_ID, VARIANT_ID, webhook, deploy)
 - [ ] Invoicing automatique
 - [ ] Support email
-- [ ] Analytics (Plausible)
+- [x] Analytics (Plausible) — script conditionnel via NEXT_PUBLIC_PLAUSIBLE_DOMAIN
 - [ ] Landing page SEO
 
 ---
@@ -234,4 +259,4 @@
 
 ---
 
-*Dernière mise à jour : 14 février 2026*
+*Dernière mise à jour : 17 février 2026*

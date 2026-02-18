@@ -283,6 +283,55 @@ export const en: TranslationSchema = {
   },
 
   // ==========================================================================
+  // Onboarding
+  // ==========================================================================
+  onboarding: {
+    title: "Setup",
+    subtitle: "Get started with FormGate in 3 steps",
+    step1Title: "Create a form",
+    step1Desc: "Create your first form and get a public URL.",
+    step1Action: "Create form",
+    step2Title: "Connect Backlog",
+    step2Desc: "Configure your Backlog space URL and API key to enable integration.",
+    step2Action: "Configure",
+    step3Title: "Receive first submission",
+    step3Desc: "Share the public URL and receive your first form submission.",
+    step3Hint: "Share your form's public URL",
+    completed: "Setup complete!",
+    dismiss: "Dismiss",
+    stepsCompleted: "completed",
+  },
+
+  // ==========================================================================
+  // Settings
+  // ==========================================================================
+  settings: {
+    title: "Settings",
+    backlogConnection: "Backlog Connection",
+    spaceUrl: "Space URL",
+    spaceUrlPlaceholder: "https://your-space.backlog.jp",
+    spaceUrlHint: "Enter your Backlog space URL",
+    apiKey: "API Key",
+    apiKeyPlaceholder: "Enter API key",
+    apiKeyHint: "Get your API key from Backlog > Personal Settings > API",
+    projectKey: "Default Project Key",
+    projectKeyPlaceholder: "e.g., PROJ",
+    projectKeyHint: "Can be overridden per form",
+    testConnection: "Test Connection",
+    testing: "Testing...",
+    save: "Save",
+    saving: "Saving...",
+    saved: "Saved",
+    saveFailed: "Failed to save",
+    testSuccess: "Connection successful",
+    testFailed: "Connection failed",
+    connected: "Connected",
+    notConnected: "Not connected",
+    apiKeyNote: "API key is encrypted server-side. Never exposed to the client.",
+    apiKeyStored: "Stored",
+  },
+
+  // ==========================================================================
   // Landing Page
   // ==========================================================================
   landing: {

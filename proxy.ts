@@ -21,6 +21,7 @@ function isAdminPath(pathname: string) {
   // Dashboard pages
   if (pathname === "/forms" || pathname.startsWith("/forms/")) return true;
   if (pathname === "/billing" || pathname.startsWith("/billing/")) return true;
+  if (pathname === "/settings" || pathname.startsWith("/settings/")) return true;
   // Admin API routes
   if (pathname === "/api/forms" || pathname.startsWith("/api/forms/")) return true;
   if (pathname.startsWith("/api/integrations/")) return true;
@@ -45,11 +46,11 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
 
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self'",
-    "connect-src 'self'",
+    "connect-src 'self' https://plausible.io https://*.ingest.sentry.io",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

@@ -28,6 +28,7 @@ export default function DashboardHeader({ email }: Props) {
 
   const navItems = [
     { href: "/forms", label: t.nav.forms },
+    { href: "/settings", label: t.nav.settings },
     { href: "/billing", label: t.nav.billing },
   ];
 

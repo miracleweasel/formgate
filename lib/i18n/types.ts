@@ -250,6 +250,49 @@ export interface TranslationSchema {
     saveFailed: string;
   };
 
+  onboarding: {
+    title: string;
+    subtitle: string;
+    step1Title: string;
+    step1Desc: string;
+    step1Action: string;
+    step2Title: string;
+    step2Desc: string;
+    step2Action: string;
+    step3Title: string;
+    step3Desc: string;
+    step3Hint: string;
+    completed: string;
+    dismiss: string;
+    stepsCompleted: string;
+  };
+
+  settings: {
+    title: string;
+    backlogConnection: string;
+    spaceUrl: string;
+    spaceUrlPlaceholder: string;
+    spaceUrlHint: string;
+    apiKey: string;
+    apiKeyPlaceholder: string;
+    apiKeyHint: string;
+    projectKey: string;
+    projectKeyPlaceholder: string;
+    projectKeyHint: string;
+    testConnection: string;
+    testing: string;
+    save: string;
+    saving: string;
+    saved: string;
+    saveFailed: string;
+    testSuccess: string;
+    testFailed: string;
+    connected: string;
+    notConnected: string;
+    apiKeyNote: string;
+    apiKeyStored: string;
+  };
+
   landing: {
     hero: {
       title: string;

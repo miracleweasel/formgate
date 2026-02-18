@@ -283,6 +283,55 @@ export const ja: TranslationSchema = {
   },
 
   // ==========================================================================
+  // Onboarding
+  // ==========================================================================
+  onboarding: {
+    title: "セットアップ",
+    subtitle: "3ステップでFormGateを始めましょう",
+    step1Title: "フォームを作成",
+    step1Desc: "最初のフォームを作成して公開URLを取得しましょう。",
+    step1Action: "フォームを作成",
+    step2Title: "Backlogを接続",
+    step2Desc: "BacklogのスペースURLとAPIキーを設定して連携を有効にします。",
+    step2Action: "接続設定",
+    step3Title: "最初の送信を受信",
+    step3Desc: "公開URLを共有して、最初のフォーム送信を受け取りましょう。",
+    step3Hint: "フォームの公開URLを共有してください",
+    completed: "セットアップ完了",
+    dismiss: "閉じる",
+    stepsCompleted: "完了",
+  },
+
+  // ==========================================================================
+  // Settings
+  // ==========================================================================
+  settings: {
+    title: "設定",
+    backlogConnection: "Backlog接続設定",
+    spaceUrl: "スペースURL",
+    spaceUrlPlaceholder: "https://your-space.backlog.jp",
+    spaceUrlHint: "BacklogスペースのURLを入力してください",
+    apiKey: "APIキー",
+    apiKeyPlaceholder: "APIキーを入力",
+    apiKeyHint: "Backlogの個人設定 > APIからキーを取得できます",
+    projectKey: "デフォルトプロジェクトキー",
+    projectKeyPlaceholder: "例: PROJ",
+    projectKeyHint: "フォームごとに上書き可能です",
+    testConnection: "接続テスト",
+    testing: "テスト中...",
+    save: "保存",
+    saving: "保存中...",
+    saved: "保存しました",
+    saveFailed: "保存に失敗しました",
+    testSuccess: "接続成功",
+    testFailed: "接続失敗",
+    connected: "接続済み",
+    notConnected: "未接続",
+    apiKeyNote: "APIキーはサーバー側で暗号化して保存されます。クライアントには公開されません。",
+    apiKeyStored: "設定済み",
+  },
+
+  // ==========================================================================
   // Landing Page
   // ==========================================================================
   landing: {

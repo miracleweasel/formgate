@@ -1,23 +1,76 @@
 // app/(dashboard)/forms/page.tsx
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { forms } from "@/lib/db/schema";
-import { desc } from "drizzle-orm";
+import { forms, submissions, integrationBacklogConnections } from "@/lib/db/schema";
+import { desc, eq } from "drizzle-orm";
 import { t } from "@/lib/i18n";
+import { getAdminEmail } from "@/lib/auth/admin";
+import { normalizeEmail, safeBoolHasApiKey } from "@/lib/backlog/validators";
+import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
 
 export default async function FormsPage() {
-  const list = await db
-    .select({
-      id: forms.id,
-      name: forms.name,
-      slug: forms.slug,
-      createdAt: forms.createdAt,
-    })
-    .from(forms)
-    .orderBy(desc(forms.createdAt));
+  const adminEmail = await getAdminEmail();
+  const email = adminEmail ? normalizeEmail(adminEmail) : "";
+
+  const [list, submissionRows, connectionRows] = await Promise.all([
+    db
+      .select({
+        id: forms.id,
+        name: forms.name,
+        slug: forms.slug,
+        createdAt: forms.createdAt,
+      })
+      .from(forms)
+      .orderBy(desc(forms.createdAt)),
+    db
+      .select({ id: submissions.id })
+      .from(submissions)
+      .limit(1),
+    email
+      ? db
+          .select({
+            id: integrationBacklogConnections.id,
+            spaceUrl: integrationBacklogConnections.spaceUrl,
+            defaultProjectKey: integrationBacklogConnections.defaultProjectKey,
+            apiKey: integrationBacklogConnections.apiKey,
+          })
+          .from(integrationBacklogConnections)
+          .where(eq(integrationBacklogConnections.userEmail, email))
+          .limit(1)
+      : Promise.resolve([]),
+  ]);
+
+  const connectionRow = connectionRows[0] ?? null;
+
+  const onboardingState = {
+    hasForms: list.length > 0,
+    hasBacklogConnection: !!connectionRow && safeBoolHasApiKey(connectionRow.apiKey),
+    hasSubmissions: submissionRows.length > 0,
+  };
+
+  const connectionData = connectionRow
+    ? {
+        spaceUrl: connectionRow.spaceUrl,
+        defaultProjectKey: connectionRow.defaultProjectKey,
+        hasApiKey: safeBoolHasApiKey(connectionRow.apiKey),
+      }
+    : null;
+
+  const showOnboarding =
+    !onboardingState.hasForms ||
+    !onboardingState.hasBacklogConnection ||
+    !onboardingState.hasSubmissions;
 
   return (
     <div className="max-w-6xl mx-auto p-6 md:p-8 space-y-8">
+      {/* Onboarding checklist */}
+      {showOnboarding && (
+        <OnboardingChecklist
+          state={onboardingState}
+          connectionData={connectionData}
+        />
+      )}
+
       {/* Page header */}
       <div className="page-header">
         <div>
