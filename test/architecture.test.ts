@@ -11,11 +11,10 @@ const ROOT = process.cwd();
 // Centralized Auth Tests
 // =============================================================================
 
-test("auth module exports required functions", async () => {
-  const authModule = await import("../lib/auth/requireAdmin");
+test("auth cookies module exports getCookieValue", async () => {
+  const cookiesModule = await import("../lib/auth/cookies");
 
-  assert.ok(typeof authModule.getCookieValue === "function", "getCookieValue should be exported");
-  assert.ok(typeof authModule.requireAdminFromRequest === "function", "requireAdminFromRequest should be exported");
+  assert.ok(typeof cookiesModule.getCookieValue === "function", "getCookieValue should be exported");
 });
 
 test("session module exports required functions", async () => {
@@ -45,7 +44,7 @@ test("getCookieValue is not duplicated in codebase", () => {
         } else if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) {
           const content = readFileSync(fullPath, "utf8");
           // Check for inline getCookieValue implementations (not imports)
-          if (content.includes("function getCookieValue") && !fullPath.includes("requireAdmin")) {
+          if (content.includes("function getCookieValue") && !fullPath.includes("cookies") && !fullPath.includes("requireUser") && !fullPath.includes("requireAdmin")) {
             matches.push(fullPath);
           }
         }
@@ -60,7 +59,7 @@ test("getCookieValue is not duplicated in codebase", () => {
   assert.equal(duplicates.length, 0, `Found duplicate getCookieValue in: ${duplicates.join(", ")}`);
 });
 
-test("requireAdmin is not duplicated in API routes", () => {
+test("requireUser is not duplicated in API routes", () => {
   const apiDir = path.join(ROOT, "app", "api");
   if (!existsSync(apiDir)) return;
 
@@ -74,10 +73,10 @@ test("requireAdmin is not duplicated in API routes", () => {
           matches.push(...searchDir(fullPath));
         } else if (entry.name.endsWith(".ts")) {
           const content = readFileSync(fullPath, "utf8");
-          // Check for inline requireAdmin implementations
+          // Check for inline requireUser implementations
           if (
-            (content.includes("async function requireAdmin") ||
-              content.includes("function requireAdmin")) &&
+            (content.includes("async function requireUser") ||
+              content.includes("function requireUser")) &&
             !fullPath.includes("lib")
           ) {
             matches.push(fullPath);
@@ -91,7 +90,7 @@ test("requireAdmin is not duplicated in API routes", () => {
   }
 
   const duplicates = searchDir(apiDir);
-  assert.equal(duplicates.length, 0, `Found duplicate requireAdmin in: ${duplicates.join(", ")}`);
+  assert.equal(duplicates.length, 0, `Found duplicate requireUser in: ${duplicates.join(", ")}`);
 });
 
 // =============================================================================

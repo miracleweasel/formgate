@@ -5,7 +5,6 @@ import {
   integrationBacklogFormSettings,
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { getAdminEmail } from "@/lib/auth/admin";
 import { makeBacklogFormSettingsHandlers } from "@/lib/backlog/form-settings-handlers";
 
 const { GET, PUT } = makeBacklogFormSettingsHandlers({
@@ -16,7 +15,6 @@ const { GET, PUT } = makeBacklogFormSettingsHandlers({
     integrationBacklogFormSettings,
   },
   eq,
-  getAdminEmail,
 });
 
 export { GET, PUT };

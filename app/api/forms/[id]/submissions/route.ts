@@ -1,7 +1,7 @@
 // app/api/forms/[id]/submissions/route.ts
 import { NextResponse } from "next/server";
 
-import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { requireUserFromRequest } from "@/lib/auth/requireUser";
 import { unauthorized, badRequest } from "@/lib/http/errors";
 import { clampLimit, looksLikeUuid } from "@/lib/validation/submissionsQuery";
 import { fetchSubmissions } from "@/lib/db/queries";
@@ -10,7 +10,8 @@ export async function GET(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
 
   const { id: formIdRaw } = await Promise.resolve(ctx.params);
   const formId = String(formIdRaw ?? "").trim();

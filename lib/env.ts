@@ -29,3 +29,18 @@ export function validateBillingEnv(): { ok: true } | { ok: false; missing: strin
   if (missing.length > 0) return { ok: false, missing };
   return { ok: true };
 }
+
+/**
+ * Get Resend API key. Returns null if not configured (dev mode).
+ */
+export function getResendApiKey(): string | null {
+  const v = process.env.RESEND_API_KEY;
+  return v && v.trim() ? v.trim() : null;
+}
+
+/**
+ * Get email sender address.
+ */
+export function getEmailFrom(): string {
+  return process.env.EMAIL_FROM?.trim() || "onboarding@resend.dev";
+}

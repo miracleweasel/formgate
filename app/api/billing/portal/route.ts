@@ -1,6 +1,6 @@
 // app/api/billing/portal/route.ts
 import { NextResponse } from "next/server";
-import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { requireUserFromRequest } from "@/lib/auth/requireUser";
 import { unauthorized, internalError } from "@/lib/http/errors";
 import { db } from "@/lib/db";
 import { subscriptions } from "@/lib/db/schema";
@@ -8,12 +8,8 @@ import { eq } from "drizzle-orm";
 import { getCustomerPortalUrl } from "@/lib/billing/lemonsqueezy";
 
 export async function POST(req: Request) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
-
-  const email = process.env.ADMIN_EMAIL;
-  if (!email) {
-    return NextResponse.json({ error: "Not configured" }, { status: 503 });
-  }
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
 
   const [sub] = await db
     .select({ lsSubscriptionId: subscriptions.lsSubscriptionId })

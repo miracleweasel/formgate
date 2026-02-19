@@ -1,25 +1,31 @@
 // app/api/forms/route.ts
 import { NextResponse } from "next/server";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
 import { slugify } from "@/lib/forms/utils";
-import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { requireUserFromRequest } from "@/lib/auth/requireUser";
 import { unauthorized, internalError, jsonError } from "@/lib/http/errors";
 import { CreateFormSchema } from "@/lib/validation/forms";
 import { DEFAULT_FIELDS } from "@/lib/validation/fields";
 import { insertFormIfAllowed } from "@/lib/billing/planLimits";
 
 export async function GET(req: Request) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
 
-  const rows = await db.select().from(forms).orderBy(desc(forms.createdAt));
+  const rows = await db
+    .select()
+    .from(forms)
+    .where(eq(forms.userEmail, email))
+    .orderBy(desc(forms.createdAt));
   return NextResponse.json({ forms: rows });
 }
 
 export async function POST(req: Request) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
 
   const rawBody = await req.json().catch(() => null);
 
@@ -45,35 +51,18 @@ export async function POST(req: Request) {
   try {
     const id = crypto.randomUUID();
 
-    // Atomic billing check + form insert (prevents race conditions)
-    const adminEmail = process.env.ADMIN_EMAIL;
-    if (adminEmail) {
-      const result = await insertFormIfAllowed(adminEmail, {
-        id,
-        name,
-        slug: finalSlug,
-        description: description || null,
-        fields: finalFields,
-      });
-      if (!result.ok) {
-        return jsonError(403, `Form limit reached (${result.current}/${result.max}). Upgrade your plan.`);
-      }
-      return NextResponse.json({ form: result.form }, { status: 201 });
+    const result = await insertFormIfAllowed(email, {
+      id,
+      name,
+      slug: finalSlug,
+      description: description || null,
+      fields: finalFields,
+      userEmail: email,
+    });
+    if (!result.ok) {
+      return jsonError(403, `Form limit reached (${result.current}/${result.max}). Upgrade your plan.`);
     }
-
-    // No billing enforcement — insert directly
-    const [created] = await db
-      .insert(forms)
-      .values({
-        id,
-        name,
-        slug: finalSlug,
-        description: description || null,
-        fields: finalFields,
-      })
-      .returning();
-
-    return NextResponse.json({ form: created }, { status: 201 });
+    return NextResponse.json({ form: result.form }, { status: 201 });
   } catch (e: any) {
     if (e?.code === "23505") {
       return jsonError(409, "slug already exists");

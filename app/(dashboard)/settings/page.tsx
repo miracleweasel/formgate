@@ -2,12 +2,14 @@
 import { db } from "@/lib/db";
 import { integrationBacklogConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { getAdminEmail } from "@/lib/auth/admin";
-import { normalizeEmail, safeBoolHasApiKey } from "@/lib/backlog/validators";
+import { getSessionEmail } from "@/lib/auth/getSessionEmail";
+import { safeBoolHasApiKey } from "@/lib/backlog/validators";
 import SettingsClient from "./SettingsClient";
+import { redirect } from "next/navigation";
 
 export default async function SettingsPage() {
-  const adminEmail = await getAdminEmail();
+  const email = await getSessionEmail();
+  if (!email) redirect("/login");
 
   let connectionData: {
     spaceUrl: string;
@@ -15,26 +17,23 @@ export default async function SettingsPage() {
     hasApiKey: boolean;
   } | null = null;
 
-  if (adminEmail) {
-    const email = normalizeEmail(adminEmail);
-    const rows = await db
-      .select({
-        spaceUrl: integrationBacklogConnections.spaceUrl,
-        defaultProjectKey: integrationBacklogConnections.defaultProjectKey,
-        apiKey: integrationBacklogConnections.apiKey,
-      })
-      .from(integrationBacklogConnections)
-      .where(eq(integrationBacklogConnections.userEmail, email))
-      .limit(1);
+  const rows = await db
+    .select({
+      spaceUrl: integrationBacklogConnections.spaceUrl,
+      defaultProjectKey: integrationBacklogConnections.defaultProjectKey,
+      apiKey: integrationBacklogConnections.apiKey,
+    })
+    .from(integrationBacklogConnections)
+    .where(eq(integrationBacklogConnections.userEmail, email))
+    .limit(1);
 
-    const row = rows[0];
-    if (row) {
-      connectionData = {
-        spaceUrl: row.spaceUrl,
-        defaultProjectKey: row.defaultProjectKey,
-        hasApiKey: safeBoolHasApiKey(row.apiKey),
-      };
-    }
+  const row = rows[0];
+  if (row) {
+    connectionData = {
+      spaceUrl: row.spaceUrl,
+      defaultProjectKey: row.defaultProjectKey,
+      hasApiKey: safeBoolHasApiKey(row.apiKey),
+    };
   }
 
   return <SettingsClient connectionData={connectionData} />;

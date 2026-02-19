@@ -1,14 +1,14 @@
 // app/api/billing/checkout/route.ts
 import { NextResponse } from "next/server";
 import { createCheckoutUrl } from "@/lib/billing/lemonsqueezy";
-import { getAdminEmail } from "@/lib/auth/admin";
-import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { requireUserFromRequest } from "@/lib/auth/requireUser";
 import { unauthorized, internalError } from "@/lib/http/errors";
 import { getClientIp, rateLimitOrNull } from "@/lib/http/rateLimit";
 import { validateBillingEnv } from "@/lib/env";
 
 export async function POST(req: Request) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
 
   // Best-effort rate limiting (per instance). Still useful to reduce abuse/spam.
   const ip = getClientIp(req);
@@ -31,13 +31,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const email = await getAdminEmail();
-    if (!email || !email.trim()) {
-      console.error("[billing/checkout] Missing ADMIN_EMAIL env var");
-      return internalError();
-    }
-
-    const url = await createCheckoutUrl(email.trim());
+    const url = await createCheckoutUrl(email);
     return NextResponse.json({ url });
   } catch (e) {
     console.error("[billing/checkout] error"); // Never log error object (may contain sensitive data)

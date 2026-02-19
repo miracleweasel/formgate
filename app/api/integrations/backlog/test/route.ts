@@ -5,8 +5,7 @@ import { integrationBacklogConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { unauthorized, internalError } from "@/lib/http/errors";
 import { backlogGetJson } from "@/lib/backlog/client";
-import { normalizeEmail } from "@/lib/backlog/validators";
-import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { requireUserFromRequest } from "@/lib/auth/requireUser";
 import { decryptString } from "@/lib/crypto";
 
 /**
@@ -16,16 +15,10 @@ import { decryptString } from "@/lib/crypto";
  * - returns neutral error on failure
  */
 export async function POST(req: Request) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
 
   try {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    if (!adminEmail || !adminEmail.trim()) {
-      return NextResponse.json({ error: "Unable to connect" }, { status: 400 });
-    }
-
-    const email = normalizeEmail(adminEmail.trim());
-
     const rows = await db
       .select({
         spaceUrl: integrationBacklogConnections.spaceUrl,

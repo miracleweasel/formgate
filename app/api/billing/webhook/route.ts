@@ -120,7 +120,6 @@ export async function POST(req: Request) {
   const emailCandidate =
     data?.attributes?.user_email ??
     data?.attributes?.customer_email ??
-    process.env.ADMIN_EMAIL ??
     null;
 
   const email = emailCandidate ? String(emailCandidate).trim().toLowerCase() : null;

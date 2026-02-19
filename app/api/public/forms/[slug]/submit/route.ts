@@ -8,7 +8,6 @@ import {
   integrationBacklogFormSettings,
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { getAdminEmail } from "@/lib/auth/admin";
 import { buildMappedIssue } from "@/lib/backlog/issue";
 import { createBacklogIssueBestEffort, type CustomFieldValue } from "@/lib/backlog/client";
 import { decryptString } from "@/lib/crypto";
@@ -25,11 +24,6 @@ type Payload = Record<string, Primitive>;
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-
-function normalizeEmail(v: unknown): string | null {
-  const s = typeof v === "string" ? v.trim().toLowerCase() : "";
-  return s ? s : null;
 }
 
 export async function POST(
@@ -55,6 +49,7 @@ export async function POST(
       name: forms.name,
       slug: forms.slug,
       fields: forms.fields,
+      userEmail: forms.userEmail,
     })
     .from(forms)
     .where(eq(forms.slug, slug))
@@ -82,7 +77,6 @@ export async function POST(
   }
 
   // 3) Validate payload against field schema
-  // Use form's custom fields or fall back to default fields
   const fieldDefs: FormField[] =
     form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS;
 
@@ -106,10 +100,10 @@ export async function POST(
 
   // 4) Atomic billing check + submission insert (prevents race conditions)
   const submissionId = crypto.randomUUID();
-  const adminEmail = process.env.ADMIN_EMAIL;
+  const ownerEmail = form.userEmail;
 
-  if (adminEmail) {
-    const result = await insertSubmissionIfAllowed(adminEmail, {
+  if (ownerEmail) {
+    const result = await insertSubmissionIfAllowed(ownerEmail, {
       id: submissionId,
       formId: form.id,
       payload,
@@ -121,7 +115,7 @@ export async function POST(
       );
     }
   } else {
-    // No billing enforcement — insert directly
+    // No owner (legacy form) — insert directly
     await db.insert(submissions).values({
       id: submissionId,
       formId: form.id,
@@ -145,10 +139,8 @@ export async function POST(
 
       if (!setting || !setting.enabled) return;
 
-      // ✅ getAdminEmail() est async => await + normalisation string
-      const adminEmailRaw = await getAdminEmail();
-      const adminEmail = normalizeEmail(adminEmailRaw);
-      if (!adminEmail) return;
+      // Get Backlog connection for the form owner
+      if (!ownerEmail) return;
 
       const [conn] = await db
         .select({
@@ -157,7 +149,7 @@ export async function POST(
           defaultProjectKey: integrationBacklogConnections.defaultProjectKey,
         })
         .from(integrationBacklogConnections)
-        .where(eq(integrationBacklogConnections.userEmail, adminEmail))
+        .where(eq(integrationBacklogConnections.userEmail, ownerEmail))
         .limit(1);
 
       if (!conn) return;

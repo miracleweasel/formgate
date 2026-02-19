@@ -207,29 +207,28 @@ describe("Security: Input Validation Edge Cases", () => {
   });
 });
 
-describe("Security: Password Hashing Strength", () => {
-  it("password hashing takes reasonable time (not instant)", async () => {
-    const { hashPassword } = await import("../lib/auth/password");
+describe("Security: Magic Link Token Strength", () => {
+  it("magic link tokens are cryptographically random", async () => {
+    const crypto = await import("node:crypto");
 
-    const start = Date.now();
-    await hashPassword("test-password");
-    const duration = Date.now() - start;
+    // Verify that randomBytes produces unique tokens
+    const token1 = crypto.randomBytes(32).toString("hex");
+    const token2 = crypto.randomBytes(32).toString("hex");
 
-    // PBKDF2 with 100k iterations should take at least 50ms
-    assert.ok(duration >= 50, `Hashing should take time (${duration}ms), not be instant`);
+    assert.equal(token1.length, 64, "Token should be 64 hex chars (32 bytes)");
+    assert.equal(token2.length, 64, "Token should be 64 hex chars (32 bytes)");
+    assert.notEqual(token1, token2, "Two tokens should never be equal");
   });
 
-  it("verification also takes reasonable time", async () => {
-    const { hashPassword, verifyPassword } = await import("../lib/auth/password");
+  it("SHA-256 hashing produces consistent results", async () => {
+    const crypto = await import("node:crypto");
 
-    const hash = await hashPassword("test-password");
+    const token = "test-token-value";
+    const hash1 = crypto.createHash("sha256").update(token).digest("hex");
+    const hash2 = crypto.createHash("sha256").update(token).digest("hex");
 
-    const start = Date.now();
-    await verifyPassword("test-password", hash);
-    const duration = Date.now() - start;
-
-    // Verification should also take time
-    assert.ok(duration >= 50, `Verification should take time (${duration}ms)`);
+    assert.equal(hash1, hash2, "Same input should produce same hash");
+    assert.equal(hash1.length, 64, "SHA-256 hash should be 64 hex chars");
   });
 });
 

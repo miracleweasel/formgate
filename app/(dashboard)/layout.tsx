@@ -1,13 +1,7 @@
 // app/(dashboard)/layout.tsx
 
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { getAdminEmail } from "@/lib/auth/admin";
-import {
-  isSessionValid,
-  parseSessionCookieValue,
-  SESSION_COOKIE_NAME,
-} from "@/lib/auth/session";
+import { getSessionEmail } from "@/lib/auth/getSessionEmail";
 import DashboardHeader from "./DashboardHeader";
 
 export default async function DashboardLayout({
@@ -15,29 +9,15 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await Promise.resolve(cookies());
+  const email = await getSessionEmail();
 
-  // ✅ bon nom de cookie: fg_session
-  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? null;
-
-  // ✅ parseSessionCookieValue est async
-  const session = await parseSessionCookieValue(sessionCookie);
-
-  const adminEmail = await getAdminEmail();
-
-  const ok =
-    !!session &&
-    isSessionValid(session) &&
-    !!adminEmail &&
-    session.email.toLowerCase() === adminEmail.toLowerCase();
-
-  if (!ok) {
+  if (!email) {
     redirect("/login");
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader email={session.email} />
+      <DashboardHeader email={email} />
       <main>{children}</main>
     </div>
   );

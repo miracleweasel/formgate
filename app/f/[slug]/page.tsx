@@ -22,6 +22,7 @@ export default async function PublicFormPage({
       slug: forms.slug,
       description: forms.description,
       fields: forms.fields,
+      userEmail: forms.userEmail,
     })
     .from(forms)
     .where(eq(forms.slug, slug))
@@ -30,8 +31,8 @@ export default async function PublicFormPage({
   const form = rows[0];
 
   // Server-side branding: free plans show "Powered by FormGate"
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const subStatus = adminEmail ? await getSubscriptionStatus(adminEmail) : "inactive";
+  const ownerEmail = form?.userEmail;
+  const subStatus = ownerEmail ? await getSubscriptionStatus(ownerEmail) : "inactive";
   const showBranding = subStatus !== "active";
 
   if (!form) {

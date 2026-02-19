@@ -4,7 +4,7 @@ import {
   isSessionValid,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth/session";
-import { getCookieValue } from "@/lib/auth/requireAdmin";
+import { getCookieValue } from "@/lib/auth/cookies";
 import { BacklogFieldMappingSchema, type BacklogFieldMapping } from "@/lib/validation/backlogMapping";
 
 type DbLike = {
@@ -14,11 +14,9 @@ type DbLike = {
 
 type EqFn = (...args: any[]) => any;
 
-type GetAdminEmailFn = () => Promise<string | null | undefined>;
-
 type SchemaLike = {
-  forms: { id: any };
-  integrationBacklogConnections: { spaceUrl: any; defaultProjectKey: any };
+  forms: { id: any; userEmail: any };
+  integrationBacklogConnections: { spaceUrl: any; defaultProjectKey: any; userEmail: any };
   integrationBacklogFormSettings: {
     formId: any;
     enabled: any;
@@ -27,6 +25,8 @@ type SchemaLike = {
     updatedAt: any;
   };
 };
+
+type UserLookupFn = (email: string) => Promise<boolean>;
 
 type Ctx = { params: Promise<{ id: string }> | { id: string } };
 
@@ -48,32 +48,21 @@ function normalizeProjectKey(v: unknown) {
 }
 
 /**
- * Validates both:
- * 1. Request has valid session cookie
- * 2. Session email matches admin email
+ * Validates session cookie and returns the user email.
  */
-async function requireAdminOr401(req: Request, getAdminEmail: GetAdminEmailFn) {
+async function requireUserOr401(req: Request) {
   try {
     const cookieHeader = req.headers.get("cookie") ?? "";
     const raw = getCookieValue(cookieHeader, SESSION_COOKIE_NAME);
 
     const session = await parseSessionCookieValue(raw);
     if (!session || !isSessionValid(session)) {
-      return { ok: false as const, res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
+      return { ok: false as const, email: "", res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
     }
 
-    const adminEmail = await getAdminEmail();
-    if (!adminEmail) {
-      return { ok: false as const, res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
-    }
-
-    if (session.email.toLowerCase() !== adminEmail.toLowerCase()) {
-      return { ok: false as const, res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
-    }
-
-    return { ok: true as const, res: null as unknown as Response };
+    return { ok: true as const, email: session.email.toLowerCase(), res: null as unknown as Response };
   } catch {
-    return { ok: false as const, res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
+    return { ok: false as const, email: "", res: json({ ok: false, error: "unauthorized" }, { status: 401 }) };
   }
 }
 
@@ -81,21 +70,20 @@ export function makeBacklogFormSettingsHandlers(deps: {
   db: DbLike;
   schema: SchemaLike;
   eq: EqFn;
-  getAdminEmail: GetAdminEmailFn;
 }) {
-  const { db, schema, eq, getAdminEmail } = deps;
+  const { db, schema, eq } = deps;
   const { forms, integrationBacklogConnections, integrationBacklogFormSettings } = schema;
 
   async function GET(req: Request, ctx: Ctx) {
-    const guard = await requireAdminOr401(req, getAdminEmail);
+    const guard = await requireUserOr401(req);
     if (!guard.ok) return guard.res;
 
     const { id: raw } = await Promise.resolve(ctx.params as any);
     const id = String(raw ?? "").trim();
 
-    // form exists?
+    // form exists and belongs to this user?
     const [form] = await db
-      .select({ id: forms.id })
+      .select({ id: forms.id, userEmail: forms.userEmail })
       .from(forms)
       .where(eq(forms.id, id))
       .limit(1);
@@ -104,13 +92,19 @@ export function makeBacklogFormSettingsHandlers(deps: {
       return json({ ok: false, error: "not_found" }, { status: 404 });
     }
 
-    // global connection (safe)
+    // Verify ownership
+    if (form.userEmail && form.userEmail !== guard.email) {
+      return json({ ok: false, error: "not_found" }, { status: 404 });
+    }
+
+    // global connection for this user
     const [conn] = await db
       .select({
         spaceUrl: integrationBacklogConnections.spaceUrl,
         defaultProjectKey: integrationBacklogConnections.defaultProjectKey,
       })
       .from(integrationBacklogConnections)
+      .where(eq(integrationBacklogConnections.userEmail, guard.email))
       .limit(1);
 
     if (!conn) {
@@ -147,20 +141,25 @@ export function makeBacklogFormSettingsHandlers(deps: {
   }
 
   async function PUT(req: Request, ctx: Ctx) {
-    const guard = await requireAdminOr401(req, getAdminEmail);
+    const guard = await requireUserOr401(req);
     if (!guard.ok) return guard.res;
 
     const { id: raw } = await Promise.resolve(ctx.params as any);
     const id = String(raw ?? "").trim();
 
-    // form exists?
+    // form exists and belongs to this user?
     const [form] = await db
-      .select({ id: forms.id })
+      .select({ id: forms.id, userEmail: forms.userEmail })
       .from(forms)
       .where(eq(forms.id, id))
       .limit(1);
 
     if (!form) {
+      return json({ ok: false, error: "not_found" }, { status: 404 });
+    }
+
+    // Verify ownership
+    if (form.userEmail && form.userEmail !== guard.email) {
       return json({ ok: false, error: "not_found" }, { status: 404 });
     }
 

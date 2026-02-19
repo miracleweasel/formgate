@@ -2,17 +2,18 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { forms, submissions, integrationBacklogConnections } from "@/lib/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { t } from "@/lib/i18n";
-import { getAdminEmail } from "@/lib/auth/admin";
-import { normalizeEmail, safeBoolHasApiKey } from "@/lib/backlog/validators";
+import { getSessionEmail } from "@/lib/auth/getSessionEmail";
+import { safeBoolHasApiKey } from "@/lib/backlog/validators";
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+import { redirect } from "next/navigation";
 
 export default async function FormsPage() {
-  const adminEmail = await getAdminEmail();
-  const email = adminEmail ? normalizeEmail(adminEmail) : "";
+  const email = await getSessionEmail();
+  if (!email) redirect("/login");
 
-  const [list, submissionRows, connectionRows] = await Promise.all([
+  const [list, connectionRows] = await Promise.all([
     db
       .select({
         id: forms.id,
@@ -21,24 +22,29 @@ export default async function FormsPage() {
         createdAt: forms.createdAt,
       })
       .from(forms)
+      .where(eq(forms.userEmail, email))
       .orderBy(desc(forms.createdAt)),
     db
-      .select({ id: submissions.id })
-      .from(submissions)
+      .select({
+        id: integrationBacklogConnections.id,
+        spaceUrl: integrationBacklogConnections.spaceUrl,
+        defaultProjectKey: integrationBacklogConnections.defaultProjectKey,
+        apiKey: integrationBacklogConnections.apiKey,
+      })
+      .from(integrationBacklogConnections)
+      .where(eq(integrationBacklogConnections.userEmail, email))
       .limit(1),
-    email
-      ? db
-          .select({
-            id: integrationBacklogConnections.id,
-            spaceUrl: integrationBacklogConnections.spaceUrl,
-            defaultProjectKey: integrationBacklogConnections.defaultProjectKey,
-            apiKey: integrationBacklogConnections.apiKey,
-          })
-          .from(integrationBacklogConnections)
-          .where(eq(integrationBacklogConnections.userEmail, email))
-          .limit(1)
-      : Promise.resolve([]),
   ]);
+
+  // Check submissions for this user's forms
+  const formIds = list.map((f) => f.id);
+  const submissionRows = formIds.length > 0
+    ? await db
+        .select({ id: submissions.id })
+        .from(submissions)
+        .where(inArray(submissions.formId, formIds))
+        .limit(1)
+    : [];
 
   const connectionRow = connectionRows[0] ?? null;
 

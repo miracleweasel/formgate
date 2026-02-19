@@ -2,8 +2,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { forms } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { eq, and } from "drizzle-orm";
+import { requireUserFromRequest } from "@/lib/auth/requireUser";
 import { unauthorized, jsonError, internalError } from "@/lib/http/errors";
 import { UpdateFormSchema } from "@/lib/validation/forms";
 import { slugify } from "@/lib/forms/utils";
@@ -15,7 +15,8 @@ function isUuid(v: string) {
 type Ctx = { params: Promise<{ id: string }> | { id: string } };
 
 export async function GET(req: Request, ctx: Ctx) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
   const { id: raw } = await Promise.resolve(ctx.params);
   const id = String(raw ?? "").trim();
 
@@ -23,7 +24,11 @@ export async function GET(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
 
-  const [row] = await db.select().from(forms).where(eq(forms.id, id)).limit(1);
+  const [row] = await db
+    .select()
+    .from(forms)
+    .where(and(eq(forms.id, id), eq(forms.userEmail, email)))
+    .limit(1);
   if (!row) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
@@ -32,7 +37,8 @@ export async function GET(req: Request, ctx: Ctx) {
 }
 
 export async function DELETE(req: Request, ctx: Ctx) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
   const { id: raw } = await Promise.resolve(ctx.params);
   const id = String(raw ?? "").trim();
 
@@ -40,12 +46,13 @@ export async function DELETE(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
 
-  await db.delete(forms).where(eq(forms.id, id));
+  await db.delete(forms).where(and(eq(forms.id, id), eq(forms.userEmail, email)));
   return NextResponse.json({ ok: true });
 }
 
 export async function PATCH(req: Request, ctx: Ctx) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
   const { id: raw } = await Promise.resolve(ctx.params);
   const id = String(raw ?? "").trim();
 
@@ -84,7 +91,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     const [updated] = await db
       .update(forms)
       .set(updates)
-      .where(eq(forms.id, id))
+      .where(and(eq(forms.id, id), eq(forms.userEmail, email)))
       .returning();
 
     if (!updated) {

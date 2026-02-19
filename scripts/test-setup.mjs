@@ -12,8 +12,7 @@ process.env.DATABASE_URL =
 process.env.APP_ENC_KEY =
   process.env.APP_ENC_KEY || "00000000000000000000000000000000";
 
-// optionnel mais utile si certains modules lisent ça
-process.env.ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@example.com";
+// optionnel — plus de ADMIN_EMAIL (magic link auth)
 process.env.APP_URL = process.env.APP_URL || "http://localhost:3000";
 
 // requis pour makeSessionCookieValue (session signing)

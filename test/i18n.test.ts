@@ -64,12 +64,12 @@ test("getTranslations => returns ja translations by default", () => {
 test("getTranslations => returns en translations when specified", () => {
   const translations = getTranslations("en");
   assert.equal(translations.common.appName, "FormGate");
-  assert.equal(translations.auth.loginTitle, "Admin Login");
+  assert.equal(translations.auth.loginTitle, "Login / Sign Up");
 });
 
 test("getTranslations => returns ja translations for ja locale", () => {
   const translations = getTranslations("ja");
-  assert.equal(translations.auth.loginTitle, "管理者ログイン");
+  assert.equal(translations.auth.loginTitle, "ログイン / 新規登録");
 });
 
 // =============================================================================
@@ -200,6 +200,6 @@ test("en translations have same structure as ja", () => {
 });
 
 test("t export is the Japanese translation", () => {
-  assert.equal(t.auth.loginTitle, "管理者ログイン");
+  assert.equal(t.auth.loginTitle, "ログイン / 新規登録");
   assert.equal(t.common.appName, "FormGate");
 });

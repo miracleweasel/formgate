@@ -6,10 +6,11 @@ import { makeBacklogFormSettingsHandlers } from "@/lib/backlog/form-settings-han
 import { makeSessionCookieValue, SESSION_COOKIE_NAME } from "@/lib/auth/session";
 
 const schema = {
-  forms: { id: Symbol("forms.id") },
+  forms: { id: Symbol("forms.id"), userEmail: Symbol("forms.userEmail") },
   integrationBacklogConnections: {
     spaceUrl: Symbol("conn.spaceUrl"),
     defaultProjectKey: Symbol("conn.defaultProjectKey"),
+    userEmail: Symbol("conn.userEmail"),
   },
   integrationBacklogFormSettings: {
     formId: Symbol("settings.formId"),
@@ -44,10 +45,10 @@ function makeDb(selectSteps: Array<any[]>, onInsert?: (v: any) => void) {
   };
 }
 
-const adminEmail = "admin@example.com";
+const userEmail = "admin@example.com";
 
 async function makeAuthReq(body?: unknown) {
-  const cookie = await makeSessionCookieValue(adminEmail);
+  const cookie = await makeSessionCookieValue(userEmail);
   const init: RequestInit = {
     headers: { cookie: `${SESSION_COOKIE_NAME}=${cookie}` },
   };
@@ -65,7 +66,6 @@ test("GET -> 401 when no cookie", async () => {
     db,
     schema,
     eq,
-    getAdminEmail: async () => adminEmail,
   });
 
   const res = await GET(new Request("http://localhost"), {
@@ -84,7 +84,6 @@ test("GET -> 404 when form not found", async () => {
     db,
     schema,
     eq,
-    getAdminEmail: async () => adminEmail,
   });
 
   const req = await makeAuthReq();
@@ -96,12 +95,11 @@ test("GET -> 404 when form not found", async () => {
 });
 
 test("GET -> ok defaults when connection missing", async () => {
-  const db = makeDb([[{ id: "x" }], []]);
+  const db = makeDb([[{ id: "x", userEmail }], []]);
   const { GET } = makeBacklogFormSettingsHandlers({
     db,
     schema,
     eq,
-    getAdminEmail: async () => adminEmail,
   });
 
   const req = await makeAuthReq();
@@ -121,7 +119,7 @@ test("GET -> returns fieldMapping when present", async () => {
   };
   // 1) form exists, 2) connection exists, 3) settings with mapping
   const db = makeDb([
-    [{ id: "x" }],
+    [{ id: "x", userEmail }],
     [{ spaceUrl: "https://test.backlog.jp", defaultProjectKey: "PROJ" }],
     [{ enabled: true, projectKey: "CUSTOM", fieldMapping: mapping }],
   ]);
@@ -129,7 +127,6 @@ test("GET -> returns fieldMapping when present", async () => {
     db,
     schema,
     eq,
-    getAdminEmail: async () => adminEmail,
   });
 
   const req = await makeAuthReq();
@@ -145,7 +142,7 @@ test("GET -> returns fieldMapping when present", async () => {
 
 test("GET -> fieldMapping null when not configured", async () => {
   const db = makeDb([
-    [{ id: "x" }],
+    [{ id: "x", userEmail }],
     [{ spaceUrl: "https://test.backlog.jp", defaultProjectKey: "PROJ" }],
     [{ enabled: true, projectKey: null, fieldMapping: null }],
   ]);
@@ -153,7 +150,6 @@ test("GET -> fieldMapping null when not configured", async () => {
     db,
     schema,
     eq,
-    getAdminEmail: async () => adminEmail,
   });
 
   const req = await makeAuthReq();
@@ -166,12 +162,11 @@ test("GET -> fieldMapping null when not configured", async () => {
 
 test("PUT -> saves valid fieldMapping", async () => {
   let savedValues: any = null;
-  const db = makeDb([[{ id: "x" }]], (v) => { savedValues = v; });
+  const db = makeDb([[{ id: "x", userEmail }]], (v) => { savedValues = v; });
   const { PUT } = makeBacklogFormSettingsHandlers({
     db,
     schema,
     eq,
-    getAdminEmail: async () => adminEmail,
   });
 
   const mapping = {
@@ -192,12 +187,11 @@ test("PUT -> saves valid fieldMapping", async () => {
 });
 
 test("PUT -> rejects invalid fieldMapping", async () => {
-  const db = makeDb([[{ id: "x" }]]);
+  const db = makeDb([[{ id: "x", userEmail }]]);
   const { PUT } = makeBacklogFormSettingsHandlers({
     db,
     schema,
     eq,
-    getAdminEmail: async () => adminEmail,
   });
 
   const invalidMapping = {
@@ -214,12 +208,11 @@ test("PUT -> rejects invalid fieldMapping", async () => {
 
 test("PUT -> saves null fieldMapping when not provided", async () => {
   let savedValues: any = null;
-  const db = makeDb([[{ id: "x" }]], (v) => { savedValues = v; });
+  const db = makeDb([[{ id: "x", userEmail }]], (v) => { savedValues = v; });
   const { PUT } = makeBacklogFormSettingsHandlers({
     db,
     schema,
     eq,
-    getAdminEmail: async () => adminEmail,
   });
 
   const req = await makeAuthReq({ enabled: true, projectKey: "PROJ" });
@@ -236,7 +229,6 @@ test("PUT -> 404 when form not found", async () => {
     db,
     schema,
     eq,
-    getAdminEmail: async () => adminEmail,
   });
 
   const req = await makeAuthReq({ enabled: true });
@@ -246,15 +238,14 @@ test("PUT -> 404 when form not found", async () => {
 });
 
 test("PUT -> 400 on invalid JSON", async () => {
-  const db = makeDb([[{ id: "x" }]]);
+  const db = makeDb([[{ id: "x", userEmail }]]);
   const { PUT } = makeBacklogFormSettingsHandlers({
     db,
     schema,
     eq,
-    getAdminEmail: async () => adminEmail,
   });
 
-  const cookie = await makeSessionCookieValue(adminEmail);
+  const cookie = await makeSessionCookieValue(userEmail);
   const req = new Request("http://localhost", {
     method: "PUT",
     headers: {

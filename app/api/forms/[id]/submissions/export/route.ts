@@ -6,7 +6,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { submissions } from "@/lib/db/schema";
 import { toCsv, formatJstForCsv } from "@/lib/csv";
-import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { requireUserFromRequest } from "@/lib/auth/requireUser";
 import { unauthorized } from "@/lib/http/errors";
 
 type Params = { id: string };
@@ -23,7 +23,6 @@ function getStringFromPayload(payload: unknown, key: string): string {
   const v = (payload as Record<string, unknown>)[key];
   if (typeof v === "string") return v;
   if (v === null || v === undefined) return "";
-  // Si quelqu’un a envoyé number/bool → on stringify
   return String(v);
 }
 
@@ -31,7 +30,8 @@ export async function GET(
   req: Request,
   ctx: { params: Promise<Params> }
 ) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
 
   const { id: formId } = await Promise.resolve(ctx.params);
 
@@ -47,7 +47,6 @@ export async function GET(
     })
     .from(submissions)
     .where(eq(submissions.formId, formId))
-    // on garde le même "typed order" que ton endpoint pagination
     .orderBy(
       desc(sql`${submissions.createdAt}::timestamp`),
       desc(sql`${submissions.id}::text`)

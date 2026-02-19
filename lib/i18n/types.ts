@@ -36,9 +36,13 @@ export interface TranslationSchema {
     loginTitle: string;
     loginSubtitle: string;
     email: string;
-    password: string;
-    signIn: string;
-    signingIn: string;
+    sendLink: string;
+    sendingLink: string;
+    checkEmail: string;
+    checkEmailHint: string;
+    invalidLink: string;
+    expiredLink: string;
+    loginOrRegister: string;
     logoutSuccess: string;
   };
 

@@ -3,24 +3,17 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { integrationBacklogConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { requireUserFromRequest } from "@/lib/auth/requireUser";
 import { unauthorized, internalError } from "@/lib/http/errors";
-import { backlogConnectionUpsertSchema, normalizeEmail, safeBoolHasApiKey } from "@/lib/backlog/validators";
+import { backlogConnectionUpsertSchema, safeBoolHasApiKey } from "@/lib/backlog/validators";
 import { encryptString } from "@/lib/crypto";
 
 // GET: safe config only
 export async function GET(req: Request) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
 
   try {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    if (!adminEmail || !adminEmail.trim()) {
-      // No admin configured => treat as no integration
-      return NextResponse.json({ integration: null }, { status: 200 });
-    }
-
-    const email = normalizeEmail(adminEmail.trim());
-
     const rows = await db
       .select({
         spaceUrl: integrationBacklogConnections.spaceUrl,
@@ -50,9 +43,10 @@ export async function GET(req: Request) {
   }
 }
 
-// POST: upsert config (admin-only)
+// POST: upsert config
 export async function POST(req: Request) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
 
   let body: unknown;
   try {
@@ -67,14 +61,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    if (!adminEmail || !adminEmail.trim()) {
-      console.error("[integrations/backlog][POST] Missing ADMIN_EMAIL env var");
-      return internalError();
-    }
-
-    const email = normalizeEmail(adminEmail.trim());
-
     const existing = await db
       .select({ id: integrationBacklogConnections.id })
       .from(integrationBacklogConnections)
@@ -93,7 +79,6 @@ export async function POST(req: Request) {
           spaceUrl: parsed.data.spaceUrl,
           apiKey: encryptedApiKey,
           defaultProjectKey: parsed.data.defaultProjectKey,
-          // updatedAt auto via $onUpdate, but that's runtime; drizzle update won't trigger it automatically.
           updatedAt: new Date(),
         })
         .where(eq(integrationBacklogConnections.id, found.id));

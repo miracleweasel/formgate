@@ -1,9 +1,9 @@
 // lib/billing/planLimits.ts
-// Plan enforcement: form count + submission count per month
+// Plan enforcement: form count + submission count per month (scoped per user)
 
 import { db } from "@/lib/db";
 import { forms, submissions } from "@/lib/db/schema";
-import { sql, gte } from "drizzle-orm";
+import { sql, gte, eq, inArray } from "drizzle-orm";
 import { getSubscriptionStatus } from "./subscription";
 import type { FormField } from "@/lib/validation/fields";
 
@@ -35,13 +35,13 @@ export function getLimits(plan: PlanId): PlanLimits {
 }
 
 /**
- * Check if the admin can create another form.
- * Returns { allowed: true } or { allowed: false, current, max }.
+ * Check if a user can create another form.
+ * Scoped to forms owned by this user.
  */
-export async function canCreateForm(adminEmail: string): Promise<
+export async function canCreateForm(userEmail: string): Promise<
   { allowed: true } | { allowed: false; current: number; max: number }
 > {
-  const status = await getSubscriptionStatus(adminEmail);
+  const status = await getSubscriptionStatus(userEmail);
   const plan = resolvePlan(status);
   const limits = getLimits(plan);
 
@@ -49,7 +49,8 @@ export async function canCreateForm(adminEmail: string): Promise<
 
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
-    .from(forms);
+    .from(forms)
+    .where(eq(forms.userEmail, userEmail));
 
   const current = row?.count ?? 0;
 
@@ -61,26 +62,37 @@ export async function canCreateForm(adminEmail: string): Promise<
 }
 
 /**
- * Check if a form can accept another submission this month.
- * Returns { allowed: true } or { allowed: false, current, max }.
+ * Check if a user can accept another submission this month.
+ * Counts submissions across all forms owned by this user.
  */
-export async function canSubmit(adminEmail: string): Promise<
+export async function canSubmit(userEmail: string): Promise<
   { allowed: true } | { allowed: false; current: number; max: number }
 > {
-  const status = await getSubscriptionStatus(adminEmail);
+  const status = await getSubscriptionStatus(userEmail);
   const plan = resolvePlan(status);
   const limits = getLimits(plan);
 
   if (limits.maxSubmissionsPerMonth === Infinity) return { allowed: true };
 
-  // Count submissions this month (UTC first day of month)
+  // Count submissions this month for this user's forms
   const now = new Date();
   const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+  // Get user's form IDs
+  const userForms = await db
+    .select({ id: forms.id })
+    .from(forms)
+    .where(eq(forms.userEmail, userEmail));
+
+  const formIds = userForms.map((f) => f.id);
+  if (formIds.length === 0) return { allowed: true };
 
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(submissions)
-    .where(gte(submissions.createdAt, firstOfMonth));
+    .where(
+      sql`${submissions.formId} IN (${sql.join(formIds.map(id => sql`${id}`), sql`, `)}) AND ${submissions.createdAt} >= ${firstOfMonth}`
+    );
 
   const current = row?.count ?? 0;
 
@@ -94,13 +106,12 @@ export async function canSubmit(adminEmail: string): Promise<
 /**
  * Atomically check submission limit AND insert in a single transaction.
  * Prevents race conditions where N concurrent requests all pass the check.
- * Returns { ok: true } or { ok: false, reason } on limit exceeded.
  */
 export async function insertSubmissionIfAllowed(
-  adminEmail: string,
+  userEmail: string,
   values: { id: string; formId: string; payload: Record<string, unknown> }
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const status = await getSubscriptionStatus(adminEmail);
+  const status = await getSubscriptionStatus(userEmail);
   const plan = resolvePlan(status);
   const limits = getLimits(plan);
 
@@ -114,12 +125,24 @@ export async function insertSubmissionIfAllowed(
     const now = new Date();
     const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
-    const [row] = await tx
-      .select({ count: sql<number>`count(*)::int` })
-      .from(submissions)
-      .where(gte(submissions.createdAt, firstOfMonth));
+    // Get user's form IDs
+    const userForms = await tx
+      .select({ id: forms.id })
+      .from(forms)
+      .where(eq(forms.userEmail, userEmail));
 
-    const current = row?.count ?? 0;
+    const formIds = userForms.map((f) => f.id);
+
+    let current = 0;
+    if (formIds.length > 0) {
+      const [row] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(submissions)
+        .where(
+          sql`${submissions.formId} IN (${sql.join(formIds.map(id => sql`${id}`), sql`, `)}) AND ${submissions.createdAt} >= ${firstOfMonth}`
+        );
+      current = row?.count ?? 0;
+    }
 
     if (current >= limits.maxSubmissionsPerMonth) {
       return { ok: false as const, reason: "Monthly submission limit reached" };
@@ -132,13 +155,13 @@ export async function insertSubmissionIfAllowed(
 
 /**
  * Atomically check form limit AND insert in a single transaction.
- * Prevents race conditions on concurrent form creation.
+ * Scoped to forms owned by this user.
  */
 export async function insertFormIfAllowed(
-  adminEmail: string,
-  values: { id: string; name: string; slug: string; description: string | null; fields: FormField[] }
+  userEmail: string,
+  values: { id: string; name: string; slug: string; description: string | null; fields: FormField[]; userEmail: string }
 ): Promise<{ ok: true; form: typeof forms.$inferSelect } | { ok: false; current: number; max: number }> {
-  const status = await getSubscriptionStatus(adminEmail);
+  const status = await getSubscriptionStatus(userEmail);
   const plan = resolvePlan(status);
   const limits = getLimits(plan);
 
@@ -151,7 +174,8 @@ export async function insertFormIfAllowed(
   return await db.transaction(async (tx) => {
     const [row] = await tx
       .select({ count: sql<number>`count(*)::int` })
-      .from(forms);
+      .from(forms)
+      .where(eq(forms.userEmail, userEmail));
 
     const current = row?.count ?? 0;
 

@@ -1,13 +1,12 @@
 // app/api/integrations/backlog/project-meta/route.ts
-// GET: fetch issue types + custom fields for a Backlog project (admin-only)
+// GET: fetch issue types + custom fields for a Backlog project
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { integrationBacklogConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { requireAdminFromRequest } from "@/lib/auth/requireAdmin";
+import { requireUserFromRequest } from "@/lib/auth/requireUser";
 import { unauthorized, internalError } from "@/lib/http/errors";
-import { normalizeEmail } from "@/lib/backlog/validators";
 import { backlogGetJson, getProjectCustomFields } from "@/lib/backlog/client";
 import { decryptString } from "@/lib/crypto";
 
@@ -20,7 +19,8 @@ type BacklogPriority = { id: number; name: string };
  * Used by the field mapping UI to populate dropdowns
  */
 export async function GET(req: Request) {
-  if (!(await requireAdminFromRequest(req))) return unauthorized();
+  const email = await requireUserFromRequest(req);
+  if (!email) return unauthorized();
 
   try {
     const url = new URL(req.url);
@@ -29,13 +29,6 @@ export async function GET(req: Request) {
     if (!projectKey) {
       return NextResponse.json({ error: "projectKey required" }, { status: 400 });
     }
-
-    const adminEmail = process.env.ADMIN_EMAIL;
-    if (!adminEmail || !adminEmail.trim()) {
-      return NextResponse.json({ error: "Not configured" }, { status: 400 });
-    }
-
-    const email = normalizeEmail(adminEmail.trim());
 
     const [conn] = await db
       .select({
