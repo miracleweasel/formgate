@@ -24,7 +24,7 @@ export async function GET(req: Request) {
 
   // Count submissions this month for this user's forms
   const now = new Date();
-  const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 
   const userForms = await db
     .select({ id: forms.id })
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
       .select({ count: sql<number>`count(*)::int` })
       .from(submissions)
       .where(
-        sql`${submissions.formId} IN (${sql.join(formIds.map(id => sql`${id}`), sql`, `)}) AND ${submissions.createdAt} >= ${firstOfMonth}`
+        sql`${submissions.formId} IN (${sql.join(formIds.map(id => sql`${id}`), sql`, `)}) AND ${submissions.createdAt} >= ${firstOfMonth}::timestamptz`
       );
     subCount = subRow?.count ?? 0;
   }
