@@ -22,13 +22,13 @@ export default function PrivacyPage() {
         </h1>
 
         <div className="prose space-y-6 text-sm" style={{ color: "var(--color-neutral-700)", lineHeight: "1.8" }}>
-          <p>最終更新日：2026年2月14日</p>
+          <p>最終更新日：2026年2月19日</p>
 
           <section className="space-y-3">
             <h2 className="text-lg font-semibold" style={{ color: "var(--color-neutral-800)" }}>1. 収集する情報</h2>
             <p>本サービスでは、以下の情報を収集します：</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li><strong>管理者情報：</strong>メールアドレス、パスワード（ハッシュ化して保存）</li>
+              <li><strong>アカウント情報：</strong>メールアドレス</li>
               <li><strong>フォーム送信データ：</strong>公開フォームから送信された内容（メールアドレス、メッセージ等）</li>
               <li><strong>Backlog連携情報：</strong>スペースURL、APIキー（暗号化して保存）、プロジェクトキー</li>
               <li><strong>利用情報：</strong>フォーム作成数、送信数等のサービス利用状況</li>
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
           <section className="space-y-3">
             <h2 className="text-lg font-semibold" style={{ color: "var(--color-neutral-800)" }}>4. データの保管とセキュリティ</h2>
             <ul className="list-disc pl-5 space-y-1">
-              <li>パスワードはPBKDF2（100,000 iterations, SHA-512）でハッシュ化</li>
+              <li>認証はメールベースのマジックリンク方式（パスワード不要）</li>
               <li>BacklogのAPIキーはAES-256-GCMで暗号化して保存</li>
               <li>通信はHTTPS（TLS）で暗号化</li>
               <li>フォーム送信データの保管期間は最大30日間</li>

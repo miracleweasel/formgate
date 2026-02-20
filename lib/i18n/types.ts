@@ -354,6 +354,17 @@ export interface TranslationSchema {
         features: readonly string[];
       };
     };
+    pain: {
+      title: string;
+      before: string;
+      beforeSteps: readonly string[];
+      after: string;
+      afterSteps: readonly string[];
+    };
+    faq: {
+      title: string;
+      items: readonly { q: string; a: string }[];
+    };
     finalCta: {
       title: string;
       subtitle: string;

@@ -395,6 +395,48 @@ export const en: TranslationSchema = {
         features: ["Unlimited forms", "5,000 submissions/month", "Priority support"],
       },
     },
+    pain: {
+      title: "Still doing this manually?",
+      before: "Before (manual)",
+      beforeSteps: [
+        "Check form submission email",
+        "Open Backlog",
+        "Create new issue",
+        "Copy & paste the content",
+        "Set assignee & priority",
+      ],
+      after: "With FormGate",
+      afterSteps: [
+        "Form submitted",
+        "Backlog issue created automatically",
+        "Done!",
+      ],
+    },
+    faq: {
+      title: "Frequently Asked Questions",
+      items: [
+        {
+          q: "Does FormGate use the official Backlog API?",
+          a: "Yes. FormGate exclusively uses the official Backlog REST API by Nulab. No scraping or unofficial methods are used.",
+        },
+        {
+          q: "How long does setup take?",
+          a: "Under 5 minutes. Log in with email, create a form, paste your Backlog API key. No coding required.",
+        },
+        {
+          q: "Are there limitations on the free plan?",
+          a: "The free plan includes 1 form and 50 submissions per month. Perfect for small-scale operations.",
+        },
+        {
+          q: "Where is my data stored?",
+          a: "Submission data is stored in a PostgreSQL database. Backlog API keys are encrypted with AES-256-GCM.",
+        },
+        {
+          q: "How is this different from Zapier/Make?",
+          a: "FormGate is purpose-built for Backlog. Setup is much faster (5 min vs 20-30 min), with a Japanese UI and lower pricing.",
+        },
+      ],
+    },
     finalCta: {
       title: "Get started today",
       subtitle: "Setup in 5 minutes. No credit card required.",

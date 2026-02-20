@@ -207,8 +207,72 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Pain Point: Before vs After */}
       <section className="py-24" style={{ background: "var(--color-neutral-0)" }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <h2
+            className="text-3xl md:text-4xl font-bold text-center mb-16"
+            style={{ color: "var(--color-neutral-900)" }}
+          >
+            {t.landing.pain.title}
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Before */}
+            <div className="card" style={{ padding: "var(--space-10)", borderColor: "var(--color-error-200)", background: "var(--color-error-50)" }}>
+              <div className="flex items-center gap-2 mb-6">
+                <svg className="w-5 h-5" style={{ color: "var(--color-error-500)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="font-semibold" style={{ color: "var(--color-error-700)" }}>
+                  {t.landing.pain.before}
+                </span>
+              </div>
+              <ol className="space-y-3">
+                {t.landing.pain.beforeSteps.map((step, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm" style={{ color: "var(--color-error-700)" }}>
+                    <span
+                      className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                      style={{ background: "var(--color-error-200)", color: "var(--color-error-700)" }}
+                    >
+                      {i + 1}
+                    </span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {/* After */}
+            <div className="card" style={{ padding: "var(--space-10)", borderColor: "var(--color-success-200)", background: "var(--color-success-50)" }}>
+              <div className="flex items-center gap-2 mb-6">
+                <svg className="w-5 h-5" style={{ color: "var(--color-success-500)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="font-semibold" style={{ color: "var(--color-success-700)" }}>
+                  {t.landing.pain.after}
+                </span>
+              </div>
+              <ol className="space-y-3">
+                {t.landing.pain.afterSteps.map((step, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm" style={{ color: "var(--color-success-700)" }}>
+                    <span
+                      className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                      style={{ background: "var(--color-success-200)", color: "var(--color-success-700)" }}
+                    >
+                      {i + 1}
+                    </span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-24" style={{ background: "var(--color-neutral-50)" }}>
         <div className="max-w-6xl mx-auto px-6">
           <h2
             className="text-3xl md:text-4xl font-bold text-center mb-16"
@@ -320,6 +384,50 @@ export default function Home() {
           <p className="text-center mt-8 text-sm" style={{ color: "var(--color-neutral-500)" }}>
             {t.landing.pricing.enterprise}
           </p>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-24" style={{ background: "var(--color-neutral-0)" }}>
+        <div className="max-w-3xl mx-auto px-6">
+          <h2
+            className="text-3xl md:text-4xl font-bold text-center mb-16"
+            style={{ color: "var(--color-neutral-900)" }}
+          >
+            {t.landing.faq.title}
+          </h2>
+
+          <div className="space-y-4">
+            {t.landing.faq.items.map((item, i) => (
+              <details
+                key={i}
+                className="card group"
+                style={{ padding: "0" }}
+              >
+                <summary
+                  className="flex items-center justify-between cursor-pointer px-6 py-5 select-none"
+                  style={{ color: "var(--color-neutral-800)" }}
+                >
+                  <span className="font-medium text-sm md:text-base pr-4">{item.q}</span>
+                  <svg
+                    className="w-5 h-5 flex-shrink-0 transition-transform group-open:rotate-180"
+                    style={{ color: "var(--color-neutral-400)" }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div
+                  className="px-6 pb-5 text-sm"
+                  style={{ color: "var(--color-neutral-600)", lineHeight: "1.7" }}
+                >
+                  {item.a}
+                </div>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 

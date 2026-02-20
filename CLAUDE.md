@@ -72,14 +72,15 @@
 ## AUDIT RÉALISÉ
 
 ### Phase 1 : Sécurité (CRITIQUE) ✅ COMPLÉTÉ
-- [x] Auth/Session : cookie httpOnly/secure/sameSite=lax, expiration 7j, guards admin via getAdminEmail
-- [x] Password hashing : PBKDF2 100k iterations SHA-512 (lib/auth/password.ts)
+- [x] Auth/Session : magic link auth, cookie httpOnly/secure/sameSite=lax, guards via requireUserFromRequest
+- [x] Magic Link : SHA-256 token hash, 15min expiry, single-use, rate limited 3/email/10min (lib/auth/magicLink.ts)
 - [x] API Backlog : token storage AES-256-GCM encrypted (PBKDF2 key derivation), rate limit 500 req/h
 - [x] Formulaire public : validation Zod stricte, rate limit IP (10/min), max 50 champs, primitives only
 - [x] Secrets : .env sécurisé, APP_ENC_KEY pour encryption, pas de secrets côté client
 - [x] Logs : sanitized - pas de données sensibles loggées (erreurs sans stack traces)
 - [x] Security headers : CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff, etc. (proxy.ts)
-- [x] Tests sécurité : 300 tests passant, attack simulations (SQL injection, XSS, path traversal, IP spoofing, CSRF, billing bypass)
+- [x] Multi-user isolation : user_email scoping sur forms, submissions, billing, integrations
+- [x] Tests sécurité : 279 tests passant, attack simulations (SQL injection, XSS, path traversal, IP spoofing, CSRF, billing bypass)
 - [x] CSRF protection : Origin/Referer validation sur toutes les mutations (proxy.ts)
 - [x] Billing enforcement : limites form count + submissions/mois côté serveur (lib/billing/planLimits.ts)
 - [x] IP extraction hardened : proxy headers ignorés sans TRUSTED_PROXY=1 (anti-spoofing)
@@ -207,7 +208,8 @@
 ## CHECKLIST PRÉ-LANCEMENT
 
 ### Technique
-- [x] Tests sécurité passés (173+ tests, attack simulations, attacker-perspective tests)
+- [x] Tests sécurité passés (279 tests, attack simulations, attacker-perspective tests)
+- [x] Magic link auth + multi-user (lib/auth/magicLink.ts, lib/auth/requireUser.ts)
 - [x] Rate limiting actif (IP 10/min submit, 30/min read, Backlog API 500/h)
 - [x] CSRF protection (proxy.ts)
 - [x] Billing enforcement server-side (lib/billing/planLimits.ts)
@@ -259,4 +261,4 @@
 
 ---
 
-*Dernière mise à jour : 17 février 2026*
+*Dernière mise à jour : 19 février 2026*

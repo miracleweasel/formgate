@@ -11,23 +11,24 @@
 
 ```bash
 pnpm install
-cp .env.example .env.local  # Configure DATABASE_URL, APP_ENC_KEY, ADMIN_EMAIL, ADMIN_PASSWORD
+cp .env.example .env.local  # Configure DATABASE_URL, APP_ENC_KEY, RESEND_API_KEY
 pnpm drizzle-kit push       # Apply DB migrations
 pnpm dev                    # Start dev server
-pnpm test                   # Run 173+ tests
+pnpm test                   # Run 279 tests
 pnpm build                  # Production build
 ```
 
 ---
 
-## Current State (17 Feb 2026)
+## Current State (19 Feb 2026)
 
 ### Implemented Features
 
 | Feature | Status | Key Files |
 |---------|--------|-----------|
-| **Auth/Session** | ✅ Done | `lib/auth/session.ts`, `lib/auth/password.ts` |
-| **Password Hashing** | ✅ PBKDF2 100k iter | `lib/auth/password.ts` |
+| **Magic Link Auth** | ✅ Done | `lib/auth/magicLink.ts`, `lib/email/send.ts`, `app/api/auth/verify/route.ts` |
+| **Multi-User Support** | ✅ Done | `lib/auth/requireUser.ts`, `lib/auth/getSessionEmail.ts` |
+| **Session Management** | ✅ Done | `lib/auth/session.ts`, `lib/auth/cookies.ts` |
 | **Form CRUD** | ✅ Done | `app/api/forms/route.ts`, `app/api/forms/[id]/route.ts` |
 | **Custom Fields** | ✅ Done | `lib/validation/fields.ts`, `lib/db/schema.ts` |
 | **Admin Field Builder UI** | ✅ Done | `components/field-builder/`, `app/(dashboard)/forms/[id]/edit/` |
@@ -37,30 +38,32 @@ pnpm build                  # Production build
 | **Backlog Connection** | ✅ Done | `lib/backlog/client.ts` |
 | **Backlog Auto-Issue** | ✅ Done | Non-blocking on submit, with field mapping |
 | **Backlog Project Meta** | ✅ Done | `app/api/integrations/backlog/project-meta/route.ts` |
-| **Billing Enforcement** | ✅ Hardened | `lib/billing/planLimits.ts` (atomic transactions, race-condition safe) |
+| **Billing Enforcement** | ✅ Hardened | `lib/billing/planLimits.ts` (atomic, race-condition safe, per-user) |
 | **Billing UI** | ✅ Done | `app/(dashboard)/billing/page.tsx` (plan comparison, usage bars, portal) |
-| **Branding (server-side)** | ✅ Done | `app/f/[slug]/page.tsx` (subscription check, not client-side) |
+| **Branding (server-side)** | ✅ Done | `app/f/[slug]/page.tsx` (per-user subscription check) |
+| **Onboarding** | ✅ Done | `components/onboarding/OnboardingChecklist.tsx`, `app/(dashboard)/settings/` |
 | **Legal Pages** | ✅ Done | `app/terms/page.tsx`, `app/privacy/page.tsx` |
 | **Error Pages** | ✅ Done | `app/error.tsx`, `app/not-found.tsx` |
 | **SEO Metadata** | ✅ Done | `app/layout.tsx` (Japanese, proper title/description) |
-| **Rate Limiting** | ✅ Hardened | IP 10/min submit, 30/min read, Backlog 500/h |
+| **Rate Limiting** | ✅ Hardened | IP 10/min submit, 30/min read, Backlog 500/h, magic link 3/email/10min |
 | **CSRF Protection** | ✅ Done | Origin/Referer validation in `proxy.ts` |
 | **Encryption** | ✅ AES-256-GCM | `lib/crypto.ts` (PBKDF2 key derivation) |
 | **Security Headers** | ✅ Done | `proxy.ts` (CSP, X-Frame-Options, Permissions-Policy, etc.) |
-| **UI/UX Redesign** | ✅ Done | Fillout.com-inspired aesthetic across all pages (Inter font, soft shadows, pill CTAs, grid layouts) |
-| **i18n** | ✅ JA/EN | `lib/i18n/` (includes field builder, landing, footer translations) |
-| **Subscription Cache** | ✅ 60s TTL | `lib/billing/subscription.ts` (in-memory, invalidated on webhook) |
-| **DB Query Layer** | ✅ Done | `lib/db/queries.ts` (reusable fetchSubmissions) |
-| **Server-only Guard** | ✅ Done | `lib/db/index.ts` (prevents client bundle bloat) |
-| **Tests** | ✅ 300 passing | `test/` (includes attacker-perspective security tests) |
+| **Sentry Monitoring** | ✅ Done | `sentry.client.config.ts`, `sentry.server.config.ts`, `global-error.tsx` |
+| **Analytics** | ✅ Done | Plausible (conditional via `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`) |
+| **UI/UX Redesign** | ✅ Done | Fillout.com-inspired aesthetic (Inter font, soft shadows, pill CTAs) |
+| **i18n** | ✅ JA/EN | `lib/i18n/` (full coverage) |
+| **Subscription Cache** | ✅ 60s TTL | `lib/billing/subscription.ts` |
+| **Tests** | ✅ 279 passing | `test/` (security, architecture, i18n, billing, backlog) |
 
 ### Pending Features
 
 | Feature | Priority | Notes |
 |---------|----------|-------|
 | **LemonSqueezy Deploy** | High | Configure store/variant IDs, webhook secret, deploy for public URL |
-| **Error Monitoring** | Medium | Sentry integration |
-| **Webhooks** | Low | Notify external systems on submit |
+| **Landing Page Polish** | Medium | Better copywriting, SEO, conversion CTAs |
+| **Documentation JP** | Medium | User guide, FAQ |
+| **Performance Testing** | Low | Load test, < 3s |
 
 ---
 
@@ -71,79 +74,63 @@ pnpm build                  # Production build
 - **Database**: PostgreSQL (Supabase)
 - **ORM**: Drizzle
 - **Validation**: Zod
+- **Email**: Resend (magic link delivery)
 - **Fonts**: Inter + Noto Sans JP (via `next/font/google`)
 - **Tests**: Node.js native `node:test`
 - **Package Manager**: pnpm
+
+### Auth System (Magic Link)
+
+1. User enters email on `/login`
+2. Server generates token (32 bytes), stores SHA-256 hash in `magic_links` table
+3. Email sent via Resend with magic link (`/api/auth/verify?token=xxx`)
+4. User clicks link → token verified → user upserted in `users` table → session cookie set
+5. First login = automatic registration (no separate signup flow)
+6. Rate limited: 3 magic links per email per 10 minutes
+
+### Multi-User Data Isolation
+
+- Every form has a `user_email` column
+- All queries scoped by authenticated user's email
+- Billing (subscriptions, plan limits) scoped per user
+- Integrations (Backlog connections) scoped per user
 
 ### Project Structure
 
 ```
 formgate/
 ├── app/
-│   ├── (dashboard)/           # Admin pages (protected)
+│   ├── (dashboard)/           # User pages (protected)
 │   │   ├── forms/             # Form management
 │   │   │   ├── [id]/          # Form detail, submissions, integrations
 │   │   │   │   ├── edit/      # Form field builder UI
 │   │   │   │   └── integrations/backlog/  # Backlog settings + field mapping UI
 │   │   │   └── new/           # Create form
-│   │   └── billing/           # Subscription management
+│   │   ├── billing/           # Subscription management
+│   │   └── settings/          # User settings, Backlog connection
 │   ├── api/
-│   │   ├── auth/              # Login/logout
-│   │   ├── forms/             # Form CRUD API (billing enforced)
+│   │   ├── auth/              # Login (magic link), verify, logout
+│   │   ├── forms/             # Form CRUD API (billing enforced, user-scoped)
 │   │   ├── public/forms/[slug]/ # Public submission API (rate limited + billing)
 │   │   ├── integrations/      # Backlog connection + project-meta
-│   │   └── billing/           # LemonSqueezy checkout, portal, webhooks (auth protected)
+│   │   └── billing/           # LemonSqueezy checkout, portal, webhooks
 │   ├── f/[slug]/              # Public form page
-│   └── login/                 # Login page
+│   └── login/                 # Login page (email-only)
 ├── lib/
-│   ├── auth/                  # Session, password, admin guards
+│   ├── auth/                  # Session, cookies, magic link, requireUser guard
 │   ├── backlog/               # Backlog API client, issue builder
-│   ├── billing/               # Plan limits enforcement
+│   ├── billing/               # Plan limits enforcement (per-user)
 │   ├── db/                    # Drizzle schema, connection, queries
+│   ├── email/                 # Resend email client
 │   ├── http/                  # Rate limiting (hardened), error helpers
 │   ├── i18n/                  # Translations (ja, en)
 │   └── validation/            # Zod schemas (forms, fields, backlogMapping)
-├── drizzle/                   # SQL migrations
-├── test/                      # All tests (173+)
+├── drizzle/                   # SQL migrations (0001-0006)
+├── test/                      # All tests (279)
 ├── proxy.ts                   # Auth proxy + security headers + CSRF
 ├── CLAUDE.md                  # CTO brief for Claude
 └── README.md                  # This file
 ```
-
----
-
-## Field Mapping System
-
-### Overview
-Maps form submission fields to Backlog issue fields (summary, description, issue type, priority, custom fields).
-
-### Mapping Configuration
-```typescript
-{
-  summary?: {
-    mode: "default" | "field" | "template",
-    fieldName?: string,          // Map a specific form field
-    template?: string            // e.g. "[{company}] {subject}"
-  },
-  description?: {
-    mode: "auto" | "field" | "template",
-    fieldName?: string,
-    template?: string
-  },
-  issueTypeId?: number,         // Backlog issue type ID
-  priorityId?: number,          // Backlog priority ID (2=High, 3=Normal, 4=Low)
-  customFields?: [{
-    backlogFieldId: number,
-    formFieldName: string        // Map form field → Backlog custom field
-  }]
-}
-```
-
-### Key Files
-- `lib/validation/backlogMapping.ts` - Zod schemas + template functions
-- `lib/backlog/issue.ts` - `buildMappedIssue()` builds summary/description from mapping
-- `app/api/integrations/backlog/project-meta/route.ts` - Fetches issue types, priorities, custom fields from Backlog API
-- `app/(dashboard)/forms/[id]/integrations/backlog/BacklogSettingsClient.tsx` - Mapping UI
 
 ---
 
@@ -152,13 +139,31 @@ Maps form submission fields to Backlog issue fields (summary, description, issue
 ### Tables
 
 ```sql
--- forms: Form definitions
+-- users: Registered users (auto-created on first magic link login)
+users (
+  id UUID PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ
+)
+
+-- magic_links: Magic link tokens for authentication
+magic_links (
+  id UUID PRIMARY KEY,
+  email TEXT NOT NULL,
+  token_hash TEXT NOT NULL,      -- SHA-256 hash of token
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,           -- Set when used (single-use)
+  created_at TIMESTAMPTZ
+)
+
+-- forms: Form definitions (user-scoped)
 forms (
   id UUID PRIMARY KEY,
   name TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
   description TEXT,
-  fields JSONB DEFAULT '[]',  -- Custom field definitions
+  fields JSONB DEFAULT '[]',     -- Custom field definitions
+  user_email TEXT,               -- Owner email (multi-user)
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
@@ -167,7 +172,7 @@ forms (
 submissions (
   id UUID PRIMARY KEY,
   form_id UUID REFERENCES forms(id) ON DELETE CASCADE,
-  payload JSONB NOT NULL,     -- Submitted data
+  payload JSONB NOT NULL,
   created_at TIMESTAMPTZ
 )
 
@@ -175,18 +180,18 @@ submissions (
 subscriptions (
   id UUID PRIMARY KEY,
   user_email TEXT NOT NULL,
-  status TEXT NOT NULL,       -- 'active' | 'inactive'
+  status TEXT NOT NULL,          -- 'active' | 'inactive'
   ls_subscription_id TEXT UNIQUE,
   ls_customer_id TEXT,
   updated_at TIMESTAMPTZ
 )
 
--- integration_backlog_connections: Global Backlog config
+-- integration_backlog_connections: Global Backlog config (per user)
 integration_backlog_connections (
   id UUID PRIMARY KEY,
   user_email TEXT NOT NULL,
   space_url TEXT NOT NULL,
-  api_key TEXT NOT NULL,      -- AES-256-GCM encrypted
+  api_key TEXT NOT NULL,         -- AES-256-GCM encrypted
   default_project_key TEXT NOT NULL,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
@@ -196,8 +201,8 @@ integration_backlog_connections (
 integration_backlog_form_settings (
   form_id UUID PRIMARY KEY REFERENCES forms(id),
   enabled BOOLEAN DEFAULT false,
-  project_key TEXT,           -- Override default
-  field_mapping JSONB,        -- Field mapping configuration
+  project_key TEXT,
+  field_mapping JSONB,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
@@ -205,53 +210,78 @@ integration_backlog_form_settings (
 
 ---
 
-## Custom Fields System
+## API Endpoints
 
-### Field Types
-- `text` - Single line text (minLength, maxLength)
-- `email` - Email validation
-- `number` - Numeric (min, max)
-- `textarea` - Multi-line text
-- `select` - Dropdown with options
+### Auth
+- `POST /api/auth/login` - Send magic link email
+- `GET /api/auth/verify?token=xxx` - Verify magic link, create session
+- `POST /api/auth/logout` - Logout
 
-### Field Definition Schema
-```typescript
-{
-  name: string,       // ^[a-zA-Z][a-zA-Z0-9_]*$ (max 50)
-  label: string,      // Display label (max 200)
-  type: "text" | "email" | "number" | "textarea" | "select",
-  required: boolean,
-  placeholder?: string,
-  options?: { value: string, label: string }[]  // For select
-}
+### Forms (Authenticated, user-scoped, billing enforced)
+- `GET /api/forms` - List user's forms
+- `POST /api/forms` - Create form (checks plan form limit)
+- `GET /api/forms/[id]` - Get form (ownership verified)
+- `PATCH /api/forms/[id]` - Update form
+- `DELETE /api/forms/[id]` - Delete form
+
+### Submissions (Authenticated)
+- `GET /api/forms/[id]/submissions` - List with pagination, filters
+- `GET /api/forms/[id]/submissions/export` - CSV export
+
+### Public (rate limited, billing enforced)
+- `GET /api/public/forms/[slug]` - Get form info (30/min rate limit)
+- `POST /api/public/forms/[slug]/submit` - Submit form (10/min rate limit)
+
+### Integrations (Authenticated)
+- `GET /api/integrations/backlog` - Get Backlog connection
+- `POST /api/integrations/backlog` - Create/update connection
+- `DELETE /api/integrations/backlog` - Delete connection
+- `POST /api/integrations/backlog/test` - Test connection
+- `GET /api/integrations/backlog/project-meta` - Get issue types, priorities, custom fields
+- `GET /api/forms/[id]/integrations/backlog` - Form Backlog settings
+- `POST /api/forms/[id]/integrations/backlog` - Update form settings
+
+### Billing
+- `POST /api/billing/checkout` - LemonSqueezy checkout
+- `GET /api/billing/portal` - Customer portal
+- `GET /api/billing/status` - Subscription status
+- `POST /api/billing/webhook` - LemonSqueezy webhook (public, HMAC-verified)
+
+---
+
+## Environment Variables
+
+```bash
+# Required
+DATABASE_URL=postgresql://...
+APP_ENC_KEY=random-32-char-string-for-encryption
+AUTH_SECRET=random-secret-for-session-signing
+
+# Email (magic link)
+RESEND_API_KEY=re_...                    # Resend API key
+EMAIL_FROM=onboarding@resend.dev         # Sender (prod: noreply@formgate.jp)
+
+# Optional
+APP_URL=https://formgate.jp              # Public URL (for magic link emails)
+TRUSTED_PROXY=1                          # Enable proxy header trust
+LEMONSQUEEZY_API_KEY=...
+LEMONSQUEEZY_WEBHOOK_SECRET=...
+LEMONSQUEEZY_STORE_ID=...
+LEMONSQUEEZY_VARIANT_ID=...
+NEXT_PUBLIC_SENTRY_DSN=...
+NEXT_PUBLIC_PLAUSIBLE_DOMAIN=...
 ```
-
-### Default Fields (backward compatibility)
-```typescript
-[
-  { name: "email", label: "Email", type: "email", required: false },
-  { name: "message", label: "Message", type: "textarea", required: true }
-]
-```
-
-### Key Files
-- `lib/validation/fields.ts` - Field schemas, buildSubmissionSchema()
-- `lib/db/schema.ts` - forms.fields JSONB column
-- `app/f/[slug]/public-form-client.tsx` - Dynamic field rendering
-- `app/api/public/forms/[slug]/submit/route.ts` - Dynamic validation
-- `components/field-builder/` - Admin field builder UI components
-- `app/(dashboard)/forms/[id]/edit/page.tsx` - Form edit page
 
 ---
 
 ## Security Implementation
 
-### Password Hashing (`lib/auth/password.ts`)
-- PBKDF2 with 100,000 iterations
-- SHA-512 digest
-- 32-byte random salt
-- 64-byte derived key
-- Format: `{salt_hex}:{hash_hex}`
+### Magic Link Auth (`lib/auth/magicLink.ts`)
+- 32-byte cryptographically random token
+- SHA-256 hash stored in DB (token never stored in plaintext)
+- 15-minute expiration
+- Single-use (marked as used atomically)
+- Rate limited: 3 per email per 10 minutes
 
 ### Encryption (`lib/crypto.ts`)
 - AES-256-GCM authenticated encryption
@@ -263,172 +293,56 @@ integration_backlog_form_settings (
 - In-memory sliding window
 - Public form submit: 10/min per IP
 - Public form read: 30/min per IP (anti-enumeration)
+- Magic link: 3/email/10min + 10/IP/10min
 - Backlog API: 500/hour per spaceUrl
-- **Hardened IP extraction**: Proxy headers (X-Forwarded-For, X-Real-IP) only trusted when `TRUSTED_PROXY=1`
-- Without TRUSTED_PROXY: uses request fingerprint (`fp:{hash}`) to prevent IP spoofing via headers
+- **Hardened IP extraction**: Proxy headers only trusted when `TRUSTED_PROXY=1`
 
 ### CSRF Protection (`proxy.ts`)
-- Origin/Referer header validation on all mutation requests (POST/PUT/PATCH/DELETE)
-- Blocks cross-origin form submissions
-- Allows JSON content-type without Origin (for curl/server-to-server)
-- Applied to both public and admin endpoints
+- Origin/Referer header validation on all mutations
+- Allows JSON content-type without Origin (curl/server-to-server)
 
 ### Billing Enforcement (`lib/billing/planLimits.ts`)
-- `insertFormIfAllowed()`: atomic transaction — check + insert form (race-condition safe)
-- `insertSubmissionIfAllowed()`: atomic transaction — check + insert submission (race-condition safe)
-- `canCreateForm()` / `canSubmit()`: read-only checks (for display purposes)
+- Atomic transactions (race-condition safe)
+- All limits scoped per user (multi-user safe)
 - Free plan: 1 form, 50 submissions/month
 
 ### Security Headers (`proxy.ts`)
-- Content-Security-Policy
-- X-Frame-Options: DENY
-- X-Content-Type-Options: nosniff
-- X-XSS-Protection: 1; mode=block
-- Referrer-Policy: strict-origin-when-cross-origin
-- Permissions-Policy: camera=(), microphone=(), geolocation=()
-
-### Middleware Route Coverage (`proxy.ts`)
-- **Admin paths** (require auth): `/forms/*`, `/billing/*`, `/api/forms/*`, `/api/integrations/*`, `/api/billing/*`
-- **Public paths** (no auth): `/`, `/login`, `/api/auth/*`, `/f/*`, `/api/public/*`, `/api/billing/webhook`, `/api/health/*`
-
-### Security Audit Results
-| Vulnerability | Severity | Status |
-|--------------|----------|--------|
-| Zero billing enforcement | CRITICAL | ✅ Fixed |
-| Rate limit IP spoofing via XFF | HIGH | ✅ Fixed |
-| `/api/billing/status` no auth | HIGH | ✅ Fixed |
-| Middleware missing `/api/integrations/*` | MEDIUM | ✅ Fixed |
-| No CSRF origin check | MEDIUM | ✅ Fixed |
-| Public form GET no rate limit | LOW | ✅ Fixed |
-
----
-
-## API Endpoints
-
-### Auth
-- `POST /api/auth/login` - Login with email/password
-- `POST /api/auth/logout` - Logout
-
-### Forms (Admin, billing enforced)
-- `GET /api/forms` - List all forms
-- `POST /api/forms` - Create form (checks plan form limit)
-- `GET /api/forms/[id]` - Get form
-- `PATCH /api/forms/[id]` - Update form (name, slug, description, fields)
-- `DELETE /api/forms/[id]` - Delete form
-
-### Submissions (Admin)
-- `GET /api/forms/[id]/submissions` - List with pagination, filters
-- `GET /api/forms/[id]/submissions/export` - CSV export
-
-### Public (rate limited, billing enforced)
-- `GET /api/public/forms/[slug]` - Get form info (30/min rate limit)
-- `POST /api/public/forms/[slug]/submit` - Submit form (10/min rate limit, monthly limit)
-
-### Integrations (Admin)
-- `GET /api/integrations/backlog` - Get Backlog connection
-- `POST /api/integrations/backlog` - Create/update connection
-- `DELETE /api/integrations/backlog` - Delete connection
-- `POST /api/integrations/backlog/test` - Test connection
-- `GET /api/integrations/backlog/project-meta` - Get issue types, priorities, custom fields
-- `GET /api/forms/[id]/integrations/backlog` - Form Backlog settings (with field mapping)
-- `POST /api/forms/[id]/integrations/backlog` - Update form settings (with field mapping)
-
----
-
-## Environment Variables
-
-```bash
-# Required
-DATABASE_URL=postgresql://...
-APP_ENC_KEY=random-32-char-string-for-encryption
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=hashed-or-plain-password
-AUTH_SECRET=random-secret-for-session-signing
-
-# Optional
-TRUSTED_PROXY=1                    # Enable proxy header trust (for reverse proxy setups)
-LEMONSQUEEZY_WEBHOOK_SECRET=...
-LEMONSQUEEZY_API_KEY=...
-```
+- Content-Security-Policy, X-Frame-Options: DENY, X-Content-Type-Options: nosniff
+- X-XSS-Protection, Referrer-Policy, Permissions-Policy
 
 ---
 
 ## Testing
 
 ```bash
-pnpm test                    # Run all 300 tests
+pnpm test                    # Run all 279 tests
 pnpm test -- --grep "field"  # Run specific tests
 ```
 
 ### Test Categories
-- `test/fields.test.ts` - Custom fields validation (23 tests)
-- `test/fieldBuilder.test.ts` - Field builder client-side validation (47 tests)
-- `test/backlog.mapping.test.ts` - Field mapping functions and schemas (47 tests)
-- `test/security.exploits.test.ts` - Attacker-perspective security tests (38 tests)
+- `test/fields.test.ts` - Custom fields validation
+- `test/fieldBuilder.test.ts` - Field builder client-side validation
+- `test/backlog.mapping.test.ts` - Field mapping functions and schemas
+- `test/security.exploits.test.ts` - Attacker-perspective security tests
 - `test/security.comprehensive.test.ts` - Security comprehensive tests
-- `test/rateLimit.test.ts` - Rate limiting with TRUSTED_PROXY awareness
-- `test/api.backlog-form-settings.handlers.test.ts` - Backlog settings handlers (10 tests)
-- `test/password.test.ts` - Password hashing
+- `test/security.api-auth.test.ts` - Cookie/input security
+- `test/rateLimit.test.ts` - Rate limiting with TRUSTED_PROXY
+- `test/api.backlog-form-settings.handlers.test.ts` - Backlog settings handlers
+- `test/auth.requireUser.test.ts` - Auth helpers
 - `test/crypto.test.ts` - Encryption
 - `test/i18n.test.ts` - Translations
+- `test/architecture.test.ts` - Code organization
 
 ---
 
-## Development Commands
-
-```bash
-pnpm dev                     # Start dev server (localhost:3000)
-pnpm build                   # Production build
-pnpm start                   # Start production server
-pnpm test                    # Run tests
-pnpm lint                    # ESLint
-pnpm drizzle-kit push        # Apply schema changes to DB
-pnpm drizzle-kit studio      # Open Drizzle Studio
-```
-
----
-
-## Git Workflow
-
-```bash
-# Current state
-git log --oneline -6
-# 0239997 style(ui): redesign all pages with Fillout.com-inspired aesthetic
-# 726b766 perf: subscription cache, direct DB query, server-only guard
-# 07ade75 feat(security,billing,legal): production hardening
-# 1f8bf47 style(ui): redesign UI inspired by Fillout.com
-# a7c3fbc feat(forms): add admin field builder UI
-# aebdf33 feat(backlog): add field mapping + security hardening
-```
-
----
-
-## Resume Development with Claude
-
-### Context Files (read these first)
-1. `CLAUDE.md` - CTO brief, priorities, constraints
-2. `README.md` - This file, technical state
-3. `lib/validation/fields.ts` - Custom fields system
-4. `lib/validation/backlogMapping.ts` - Field mapping schemas
-5. `lib/db/schema.ts` - Database schema
-
-### Next Tasks (Priority Order)
-
-1. **LemonSqueezy Deploy** (High)
-   - Configure store/variant IDs, webhook secret, deploy for public URL
-   - Files: `app/api/billing/`
-
-2. **Error Monitoring** (Medium)
-   - Sentry integration for production error tracking
-
-### Useful Prompts
+## Recent Commits
 
 ```
-"Continue implementing FormGate. Read CLAUDE.md and README.md first.
-Current state: UI/UX redesign done (Fillout.com style). Next: LemonSqueezy deploy config."
-
-"Configure LemonSqueezy for FormGate. Need: store ID, variant ID, webhook secret.
-Read lib/billing/lemonsqueezy.ts and app/api/billing/ for current implementation."
+76a246c feat(auth): replace password auth with magic link + multi-user support
+4e5c32f fix(deploy): copy static assets into standalone output for Railway
+61f7ab9 fix(deploy): require Node >= 20.9.0 for Next.js 16
+b329bd4 feat(onboarding,settings,monitoring): onboarding flow, settings page, Sentry, Plausible, Railway
+0239997 style(ui): redesign all pages with Fillout.com-inspired aesthetic
 ```
 
 ---
@@ -450,4 +364,4 @@ Proprietary. All rights reserved.
 
 ---
 
-*Last updated: 17 February 2026*
+*Last updated: 19 February 2026*
