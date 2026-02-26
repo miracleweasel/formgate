@@ -35,6 +35,7 @@ export const ja: TranslationSchema = {
     forms: "フォーム",
     billing: "プラン",
     settings: "設定",
+    help: "ヘルプ",
     logout: "ログアウト",
     loggedInAs: "ログイン中:",
   },
@@ -63,8 +64,8 @@ export const ja: TranslationSchema = {
   forms: {
     title: "フォーム一覧",
     newForm: "新規作成",
-    noForms: "フォームがまだありません",
-    noFormsHint: "「新規作成」ボタンからフォームを作成してください。",
+    noForms: "まだフォームがありません",
+    noFormsHint: "最初のフォームを作成して、お問い合わせの自動化を始めましょう。",
     createTitle: "フォーム作成",
     formName: "フォーム名",
     formNamePlaceholder: "例: お問い合わせ",
@@ -93,7 +94,7 @@ export const ja: TranslationSchema = {
   submissions: {
     title: "送信一覧",
     recent: "最近の送信",
-    noSubmissions: "送信がまだありません。",
+    noSubmissions: "まだ送信がありません。公開URLを共有してフォームを利用しましょう。",
     noSubmissionsFiltered: "該当する送信がありません。",
     exportCsv: "CSVエクスポート",
     exporting: "エクスポート中...",
@@ -129,7 +130,7 @@ export const ja: TranslationSchema = {
     submit: "送信する",
     submitting: "送信中...",
     thankYou: "ありがとうございます",
-    thankYouMessage: "メッセージを受け付けました。",
+    thankYouMessage: "お問い合わせを受け付けました。ありがとうございます。",
     poweredBy: "Powered by FormGate",
     formNotFound: "このフォームは存在しないか、削除されました。",
   },
@@ -216,7 +217,7 @@ export const ja: TranslationSchema = {
     formsUsed: "フォーム",
     submissionsUsed: "今月の送信数",
     unlimited: "無制限",
-    billingNotConfigured: "決済システムが設定されていません。管理者にお問い合わせください。",
+    billingNotConfigured: "決済システムは準備中です。現在は無料プランをご利用いただけます。",
     manageSubscription: "サブスクリプション管理",
     perMonth: "/月",
   },
@@ -225,11 +226,11 @@ export const ja: TranslationSchema = {
   // Errors
   // ==========================================================================
   errors: {
-    generic: "エラーが発生しました",
-    network: "ネットワークエラー。接続を確認してください。",
+    generic: "エラーが発生しました。もう一度お試しください。",
+    network: "通信エラーが発生しました。インターネット接続を確認してもう一度お試しください。",
     unauthorized: "認証が必要です。ログインしてください。",
     invalidCredentials: "ログインリンクが無効です。もう一度お試しください。",
-    rateLimited: "リクエストが多すぎます。しばらくお待ちください。",
+    rateLimited: "リクエスト制限に達しました。少し時間をおいてから再度お試しください。",
     notFound: "見つかりませんでした。",
     invalidInput: "入力内容を確認してください。",
     slugExists: "このスラッグは既に使用されています。",
@@ -341,7 +342,7 @@ export const ja: TranslationSchema = {
   landing: {
     hero: {
       title: "フォーム → Backlogチケット、自動で。",
-      subtitle: "公開フォームの送信を、Backlogの課題に自動変換。セットアップは5分、コード不要。",
+      subtitle: "フォームの送信内容をBacklogの課題に自動変換。コード不要、5分でセットアップ完了。",
       cta: "無料で始める",
       ctaLogin: "ログイン",
       badge: "Backlog公式API使用",
@@ -439,7 +440,7 @@ export const ja: TranslationSchema = {
     },
     finalCta: {
       title: "今すぐ始めよう",
-      subtitle: "5分でセットアップ完了。クレジットカード不要。",
+      subtitle: "セットアップは5分。クレジットカード不要で今すぐ始められます。",
     },
     footer: {
       copyright: "© 2026 FormGate",

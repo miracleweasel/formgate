@@ -35,6 +35,7 @@ export const en: TranslationSchema = {
     forms: "Forms",
     billing: "Billing",
     settings: "Settings",
+    help: "Help",
     logout: "Logout",
     loggedInAs: "Logged in as:",
   },
@@ -64,7 +65,7 @@ export const en: TranslationSchema = {
     title: "Forms",
     newForm: "New Form",
     noForms: "No forms yet",
-    noFormsHint: "Click \"New Form\" to create your first form.",
+    noFormsHint: "Create your first form and start automating inquiries.",
     createTitle: "Create Form",
     formName: "Form Name",
     formNamePlaceholder: "e.g., Contact Us",
@@ -93,7 +94,7 @@ export const en: TranslationSchema = {
   submissions: {
     title: "Submissions",
     recent: "Recent Submissions",
-    noSubmissions: "No submissions yet.",
+    noSubmissions: "No submissions yet. Share your form's public URL to start receiving responses.",
     noSubmissionsFiltered: "No matching submissions.",
     exportCsv: "Export CSV",
     exporting: "Exporting...",
@@ -129,7 +130,7 @@ export const en: TranslationSchema = {
     submit: "Submit",
     submitting: "Submitting...",
     thankYou: "Thank you!",
-    thankYouMessage: "Your message has been received.",
+    thankYouMessage: "Your inquiry has been received. Thank you!",
     poweredBy: "Powered by FormGate",
     formNotFound: "This form does not exist or has been deleted.",
   },
@@ -216,7 +217,7 @@ export const en: TranslationSchema = {
     formsUsed: "Forms",
     submissionsUsed: "Submissions this month",
     unlimited: "Unlimited",
-    billingNotConfigured: "Billing is not configured. Please contact the administrator.",
+    billingNotConfigured: "Billing is being set up. You can use the free plan in the meantime.",
     manageSubscription: "Manage Subscription",
     perMonth: "/month",
   },
@@ -225,11 +226,11 @@ export const en: TranslationSchema = {
   // Errors
   // ==========================================================================
   errors: {
-    generic: "An error occurred",
-    network: "Network error. Please check your connection.",
+    generic: "An error occurred. Please try again.",
+    network: "Connection error. Please check your internet and try again.",
     unauthorized: "Authentication required. Please log in.",
     invalidCredentials: "Invalid login link. Please try again.",
-    rateLimited: "Too many requests. Please wait a moment.",
+    rateLimited: "Rate limit reached. Please wait a moment and try again.",
     notFound: "Not found.",
     invalidInput: "Please check your input.",
     slugExists: "This slug is already in use.",
@@ -341,7 +342,7 @@ export const en: TranslationSchema = {
   landing: {
     hero: {
       title: "Form → Backlog Ticket, Automatically.",
-      subtitle: "Turn public form submissions into Backlog issues automatically. Setup in 5 minutes, no code required.",
+      subtitle: "Automatically turn form submissions into Backlog issues. No code required, setup in 5 minutes.",
       cta: "Get Started Free",
       ctaLogin: "Login",
       badge: "Official Backlog API",
@@ -439,7 +440,7 @@ export const en: TranslationSchema = {
     },
     finalCta: {
       title: "Get started today",
-      subtitle: "Setup in 5 minutes. No credit card required.",
+      subtitle: "Setup takes 5 minutes. No credit card required to get started.",
     },
     footer: {
       copyright: "© 2026 FormGate",

@@ -27,6 +27,7 @@ export interface TranslationSchema {
     forms: string;
     billing: string;
     settings: string;
+    help: string;
     logout: string;
     loggedInAs: string;
   };

@@ -22,6 +22,7 @@ function isAdminPath(pathname: string) {
   if (pathname === "/forms" || pathname.startsWith("/forms/")) return true;
   if (pathname === "/billing" || pathname.startsWith("/billing/")) return true;
   if (pathname === "/settings" || pathname.startsWith("/settings/")) return true;
+  if (pathname === "/help" || pathname.startsWith("/help/")) return true;
   // Admin API routes
   if (pathname === "/api/forms" || pathname.startsWith("/api/forms/")) return true;
   if (pathname.startsWith("/api/integrations/")) return true;

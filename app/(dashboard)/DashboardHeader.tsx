@@ -30,6 +30,7 @@ export default function DashboardHeader({ email }: Props) {
     { href: "/forms", label: t.nav.forms },
     { href: "/settings", label: t.nav.settings },
     { href: "/billing", label: t.nav.billing },
+    { href: "/help", label: t.nav.help },
   ];
 
   function isActive(href: string) {

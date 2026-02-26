@@ -123,7 +123,19 @@ export async function POST(
     });
   }
 
-  // 5) Best-effort Backlog issue creation (NEVER block submit response)
+  // 5) Best-effort email notification to form owner
+  if (ownerEmail) {
+    void (async () => {
+      try {
+        const { sendSubmissionNotification } = await import("@/lib/email/send");
+        await sendSubmissionNotification(ownerEmail, form.name, payload);
+      } catch {
+        console.error("[public/submit][notify] email failed");
+      }
+    })();
+  }
+
+  // 6) Best-effort Backlog issue creation (NEVER block submit response)
   void (async () => {
     try {
       // Form-level setting enabled?
