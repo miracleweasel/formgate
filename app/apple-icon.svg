@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <!-- Background -->
+  <rect width="180" height="180" rx="40" fill="#4F46E5"/>
+  <!-- Gate opening -->
+  <rect x="45" y="38" width="90" height="112" rx="12" fill="white"/>
+  <!-- Form lines -->
+  <rect x="62" y="58" width="56" height="10" rx="5" fill="#4F46E5" opacity="0.4"/>
+  <rect x="62" y="82" width="40" height="10" rx="5" fill="#4F46E5" opacity="0.4"/>
+  <!-- Checkmark -->
+  <path d="M72 115 L86 129 L112 100" stroke="#4F46E5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

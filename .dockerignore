@@ -1,8 +1,0 @@
-node_modules
-.next
-.git
-.claude
-.env*
-test
-nul
-*.md

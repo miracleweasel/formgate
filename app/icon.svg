@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Gate shape (rounded square) -->
+  <rect x="2" y="2" width="28" height="28" rx="6" fill="#4F46E5"/>
+  <!-- Gate opening -->
+  <rect x="8" y="7" width="16" height="20" rx="2" fill="white"/>
+  <!-- Form lines -->
+  <rect x="11" y="11" width="10" height="2" rx="1" fill="#4F46E5" opacity="0.4"/>
+  <rect x="11" y="15.5" width="7" height="2" rx="1" fill="#4F46E5" opacity="0.4"/>
+  <!-- Checkmark -->
+  <path d="M13 20.5 L15.5 23 L20 18" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
