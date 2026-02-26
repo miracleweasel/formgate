@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test:*)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nrefactor\\(auth\\): use SESSION_COOKIE_NAME constant and simplify email check\n\nUse exported constant instead of hardcoded cookie name, simplify\nemail comparison with toLowerCase\\(\\), and add test coverage.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm build:*)",
+      "Bash(git push:*)",
+      "Bash(pnpm add:*)",
+      "Bash(findstr:*)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:www.fillout.com)",
+      "Bash(ls:*)",
+      "Bash(railway status:*)",
+      "Bash(railway whoami:*)",
+      "Bash(railway list:*)",
+      "Bash(railway init:*)",
+      "Bash(railway service:*)",
+      "Bash(railway add --help:*)",
+      "Bash(railway add:*)",
+      "Bash(railway variables set:*)",
+      "Bash(railway variables:*)",
+      "Bash(railway up:*)",
+      "Bash(railway domain:*)",
+      "Bash(railway logs:*)",
+      "WebFetch(domain:formgate-web-production.up.railway.app)",
+      "Bash(git -C \"C:\\\\Users\\\\anthony\\\\Desktop\\\\dev\\\\projets\\\\formgate\" log --oneline -5)",
+      "Bash(git -C \"C:\\\\Users\\\\anthony\\\\Desktop\\\\dev\\\\projets\\\\formgate\" add .env.example \"app/\\(dashboard\\)/forms/page.tsx\" \"app/\\(dashboard\\)/layout.tsx\" \"app/\\(dashboard\\)/settings/page.tsx\" \"app/api/auth/login/route.ts\" \"app/api/auth/verify/route.ts\" \"app/api/billing/checkout/route.ts\" \"app/api/billing/portal/route.ts\" \"app/api/billing/status/route.ts\" \"app/api/billing/webhook/route.ts\" \"app/api/forms/[id]/integrations/backlog/route.ts\" \"app/api/forms/[id]/route.ts\" \"app/api/forms/[id]/submissions/export/route.ts\" \"app/api/forms/[id]/submissions/route.ts\" \"app/api/forms/route.ts\" \"app/api/integrations/backlog/project-meta/route.ts\" \"app/api/integrations/backlog/route.ts\" \"app/api/integrations/backlog/test/route.ts\" \"app/api/public/forms/[slug]/submit/route.ts\" \"app/f/[slug]/page.tsx\" \"app/login/LoginClient.tsx\" lib/auth/admin.ts lib/auth/cookies.ts lib/auth/getSessionEmail.ts lib/auth/magicLink.ts lib/auth/password.ts lib/auth/requireAdmin.ts lib/auth/requireUser.ts lib/backlog/form-settings-handlers.ts lib/billing/planLimits.ts lib/db/schema.ts lib/email/send.ts lib/env.ts lib/i18n/en.ts lib/i18n/ja.ts lib/i18n/types.ts package.json pnpm-lock.yaml scripts/hash-password.ts scripts/test-setup.mjs \"drizzle/0006_magic_link_auth.sql\" test/api.backlog-form-settings.handlers.test.ts test/architecture.test.ts test/auth.requireAdminFromRequest.test.ts test/auth.requireUser.test.ts test/i18n.test.ts test/password.test.ts test/security.api-auth.test.ts test/security.comprehensive.test.ts)"
+    ]
+  }
+}
