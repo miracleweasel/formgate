@@ -1,11 +1,10 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "pnpm build && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public"
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "node .next/standalone/server.js",
     "healthcheckPath": "/api/health/db",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",
