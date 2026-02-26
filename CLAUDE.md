@@ -144,9 +144,11 @@
 - [x] Analytics : Plausible script conditionnel dans app/layout.tsx
   - CSP mise à jour (script-src + connect-src: plausible.io)
   - .env.example mis à jour (NEXT_PUBLIC_SENTRY_DSN, NEXT_PUBLIC_PLAUSIBLE_DOMAIN)
-- [ ] Documentation JP : guide utilisateur, FAQ
-- [ ] Email templates : welcome, billing, erreurs
-- [ ] Copywriting polish : CTAs, messages d'erreur, guidance
+- [x] Documentation JP : guide utilisateur /help (app/(dashboard)/help/page.tsx)
+- [x] Email templates : notification soumission + welcome email (lib/email/send.ts)
+- [x] Copywriting polish : CTAs, messages d'erreur, empty states (lib/i18n/ja.ts, en.ts)
+- [x] Magic link cleanup : auto-nettoyage tokens expirés (lib/auth/magicLink.ts)
+- [x] Submission detail view : click-to-expand dans la liste des soumissions
 - [ ] LemonSqueezy finalization : STORE_ID, VARIANT_ID, webhook, deploy
 - [ ] Performance testing : load test, métriques < 3s
 - [ ] Backups DB automatiques (Supabase PITR)
@@ -220,9 +222,9 @@
 
 ### Produit
 - [x] Onboarding : checklist 3 étapes + settings page + inline Backlog form
-- [ ] Documentation JP : guide utilisateur
-- [ ] FAQ rédigée
-- [ ] Email templates
+- [x] Documentation JP : guide utilisateur /help
+- [x] FAQ : section landing page + guide
+- [x] Email templates : magic link, notification soumission, welcome
 - [x] Terms of Service JP (app/terms/)
 - [x] Privacy Policy (app/privacy/)
 
@@ -231,7 +233,7 @@
 - [ ] Invoicing automatique
 - [ ] Support email
 - [x] Analytics (Plausible) — script conditionnel via NEXT_PUBLIC_PLAUSIBLE_DOMAIN
-- [ ] Landing page SEO
+- [x] Landing page SEO : metadata, pain points, FAQ, CTAs optimisés
 
 ---
 

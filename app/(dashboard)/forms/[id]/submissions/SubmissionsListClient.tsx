@@ -1,7 +1,7 @@
 // app/(dashboard)/forms/[id]/submissions/SubmissionsListClient.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
 
 type SubmissionRow = {
@@ -35,6 +35,9 @@ export default function SubmissionsListClient(props: {
   const [items, setItems] = useState<SubmissionRow[]>(initialItems);
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
   const [loading, setLoading] = useState(false);
+
+  // Expanded detail
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Search
   const [inputEmail, setInputEmail] = useState("");
@@ -308,19 +311,78 @@ export default function SubmissionsListClient(props: {
                   typeof payload.message === "string" && payload.message.trim()
                     ? payload.message.trim()
                     : "—";
+                const isExpanded = expandedId === s.id;
 
                 return (
-                  <tr key={s.id} style={{ borderBottom: "1px solid var(--color-neutral-100)" }}>
-                    <td className="px-6 py-3.5 whitespace-nowrap" style={{ color: "var(--color-neutral-500)" }}>
-                      {fmtDate(s.created_at)}
-                    </td>
-                    <td className="px-6 py-3.5" style={{ color: "var(--color-neutral-700)" }}>
-                      {email}
-                    </td>
-                    <td className="px-6 py-3.5 max-w-sm truncate" style={{ color: "var(--color-neutral-600)" }}>
-                      {message}
-                    </td>
-                  </tr>
+                  <React.Fragment key={s.id}>
+                    <tr
+                      onClick={() => setExpandedId(isExpanded ? null : s.id)}
+                      style={{ borderBottom: isExpanded ? "none" : "1px solid var(--color-neutral-100)", cursor: "pointer" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-neutral-25, #fafafa)"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; }}
+                    >
+                      <td className="px-6 py-3.5 whitespace-nowrap" style={{ color: "var(--color-neutral-500)" }}>
+                        <span className="inline-block w-4 text-xs" style={{ color: "var(--color-neutral-300)" }}>
+                          {isExpanded ? "▾" : "▸"}
+                        </span>
+                        {fmtDate(s.created_at)}
+                      </td>
+                      <td className="px-6 py-3.5" style={{ color: "var(--color-neutral-700)" }}>
+                        {email}
+                      </td>
+                      <td className="px-6 py-3.5 max-w-sm truncate" style={{ color: "var(--color-neutral-600)" }}>
+                        {message}
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr>
+                        <td colSpan={3} style={{ padding: 0 }}>
+                          <div
+                            style={{
+                              padding: "16px 24px 20px",
+                              background: "var(--color-neutral-25, #fafafa)",
+                              borderBottom: "1px solid var(--color-neutral-150)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                                gap: "12px",
+                              }}
+                            >
+                              {Object.entries(payload).map(([key, value]) => (
+                                <div key={key}>
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      fontWeight: 500,
+                                      textTransform: "uppercase",
+                                      letterSpacing: "0.05em",
+                                      color: "var(--color-neutral-400)",
+                                      marginBottom: "2px",
+                                    }}
+                                  >
+                                    {key}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "14px",
+                                      color: "var(--color-neutral-700)",
+                                      wordBreak: "break-word",
+                                      whiteSpace: "pre-wrap",
+                                    }}
+                                  >
+                                    {String(value ?? "—")}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </tbody>

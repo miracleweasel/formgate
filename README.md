@@ -20,7 +20,7 @@ pnpm build                  # Production build
 
 ---
 
-## Current State (19 Feb 2026)
+## Current State (19 Feb 2026 — updated)
 
 ### Implemented Features
 
@@ -54,6 +54,12 @@ pnpm build                  # Production build
 | **UI/UX Redesign** | ✅ Done | Fillout.com-inspired aesthetic (Inter font, soft shadows, pill CTAs) |
 | **i18n** | ✅ JA/EN | `lib/i18n/` (full coverage) |
 | **Subscription Cache** | ✅ 60s TTL | `lib/billing/subscription.ts` |
+| **Email Notifications** | ✅ Done | Submission notification + welcome email (`lib/email/send.ts`) |
+| **Help Page** | ✅ Done | User guide in Japanese (`app/(dashboard)/help/page.tsx`) |
+| **Submission Detail View** | ✅ Done | Click-to-expand rows in submissions list |
+| **Magic Link Cleanup** | ✅ Done | Auto-cleanup expired tokens (`lib/auth/magicLink.ts`) |
+| **Landing Page** | ✅ Polished | Pain points, FAQ, SEO metadata, strong CTAs |
+| **Copywriting** | ✅ Polished | Natural Japanese/English, actionable errors, motivating empty states |
 | **Tests** | ✅ 279 passing | `test/` (security, architecture, i18n, billing, backlog) |
 
 ### Pending Features
@@ -61,8 +67,6 @@ pnpm build                  # Production build
 | Feature | Priority | Notes |
 |---------|----------|-------|
 | **LemonSqueezy Deploy** | High | Configure store/variant IDs, webhook secret, deploy for public URL |
-| **Landing Page Polish** | Medium | Better copywriting, SEO, conversion CTAs |
-| **Documentation JP** | Medium | User guide, FAQ |
 | **Performance Testing** | Low | Load test, < 3s |
 
 ---
@@ -107,6 +111,7 @@ formgate/
 │   │   │   │   └── integrations/backlog/  # Backlog settings + field mapping UI
 │   │   │   └── new/           # Create form
 │   │   ├── billing/           # Subscription management
+│   │   ├── help/              # User guide (Japanese)
 │   │   └── settings/          # User settings, Backlog connection
 │   ├── api/
 │   │   ├── auth/              # Login (magic link), verify, logout
@@ -261,9 +266,11 @@ AUTH_SECRET=random-secret-for-session-signing
 RESEND_API_KEY=re_...                    # Resend API key
 EMAIL_FROM=onboarding@resend.dev         # Sender (prod: noreply@formgate.jp)
 
-# Optional
+# App
 APP_URL=https://formgate.jp              # Public URL (for magic link emails)
-TRUSTED_PROXY=1                          # Enable proxy header trust
+TRUSTED_PROXY=1                          # Enable proxy header trust (Railway/Vercel)
+
+# LemonSqueezy billing (optional — required for paid plans)
 LEMONSQUEEZY_API_KEY=...
 LEMONSQUEEZY_WEBHOOK_SECRET=...
 LEMONSQUEEZY_STORE_ID=...
@@ -338,11 +345,11 @@ pnpm test -- --grep "field"  # Run specific tests
 ## Recent Commits
 
 ```
+99b2854 feat: submission email notifications, welcome email, help page, copywriting polish
+874e845 style(ux): show full public URL with copy button on form detail page
+5d7d747 fix(billing): convert Date to ISO string for Drizzle SQL templates
+48a3ee0 feat: landing page polish, email template, copywriting, README/CLAUDE update
 76a246c feat(auth): replace password auth with magic link + multi-user support
-4e5c32f fix(deploy): copy static assets into standalone output for Railway
-61f7ab9 fix(deploy): require Node >= 20.9.0 for Next.js 16
-b329bd4 feat(onboarding,settings,monitoring): onboarding flow, settings page, Sentry, Plausible, Railway
-0239997 style(ui): redesign all pages with Fillout.com-inspired aesthetic
 ```
 
 ---

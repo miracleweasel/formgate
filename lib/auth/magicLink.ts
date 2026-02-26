@@ -25,6 +25,11 @@ function hashToken(token: string): string {
 export async function generateMagicLink(email: string): Promise<
   { ok: true; token: string } | { ok: false; reason: "rate_limited" }
 > {
+  // Opportunistic cleanup (non-blocking, ~1% of requests)
+  if (Math.random() < 0.01) {
+    void cleanupExpiredLinks().catch(() => {});
+  }
+
   const normalizedEmail = email.trim().toLowerCase();
 
   // Rate limit check: max N magic links per email in window
@@ -91,4 +96,16 @@ export async function verifyMagicLink(token: string): Promise<string | null> {
     .where(eq(magicLinks.id, row.id));
 
   return row.email;
+}
+
+/**
+ * Delete expired or used magic links older than 24 hours.
+ * Call periodically to prevent table bloat.
+ */
+export async function cleanupExpiredLinks(): Promise<number> {
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const result: any = await db.delete(magicLinks).where(
+    sql`${magicLinks.expiresAt} < ${cutoff}::timestamptz`
+  );
+  return result?.rowCount ?? 0;
 }
