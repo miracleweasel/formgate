@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /forms
+Disallow: /billing
+Disallow: /settings
+Disallow: /help
+
+Sitemap: https://formgate-web-production.up.railway.app/sitemap.xml
