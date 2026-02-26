@@ -1,10 +1,7 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-const nextConfig: NextConfig = {
-  // Standalone output for Railway/Docker deployment (smaller image)
-  output: "standalone",
-};
+const nextConfig: NextConfig = {};
 
 // Wrap with Sentry only when DSN is configured
 const sentryEnabled = !!process.env.NEXT_PUBLIC_SENTRY_DSN;
