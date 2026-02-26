@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { forms, submissions } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { t } from "@/lib/i18n";
 import DeleteButton from "./DeleteButton";
+import CopyUrlButton from "./CopyUrlButton";
 
 type Ctx = { params: Promise<{ id: string }> | { id: string } };
 
@@ -40,7 +42,12 @@ export default async function FormDetailPage(ctx: Ctx) {
     .orderBy(desc(submissions.createdAt))
     .limit(10);
 
-  const publicUrl = `/f/${form.slug}`;
+  const publicPath = `/f/${form.slug}`;
+  const headersList = await headers();
+  const host = headersList.get("host") ?? "localhost:3000";
+  const proto = headersList.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+  const appUrl = process.env.APP_URL || `${proto}://${host}`;
+  const fullPublicUrl = `${appUrl}${publicPath}`;
 
   return (
     <div className="max-w-4xl mx-auto p-6 md:p-8 space-y-8">
@@ -71,20 +78,25 @@ export default async function FormDetailPage(ctx: Ctx) {
 
       {/* Public URL */}
       <div className="card" style={{ padding: "var(--space-5) var(--space-6)" }}>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--color-neutral-400)" }}>
-              {t.forms.publicUrl}
-            </div>
-            <div className="text-sm font-mono mt-1" style={{ color: "var(--color-accent-600)" }}>
-              {publicUrl}
-            </div>
-          </div>
-          <Link
-            href={publicUrl}
-            target="_blank"
-            className="btn btn-secondary btn-sm"
+        <div className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: "var(--color-neutral-400)" }}>
+          {t.forms.publicUrl}
+        </div>
+        <div className="flex items-center gap-3">
+          <div
+            className="flex-1 text-sm font-mono px-3 py-2 rounded-lg overflow-x-auto"
+            style={{ background: "var(--color-neutral-50)", color: "var(--color-accent-600)", border: "1px solid var(--color-neutral-150)" }}
           >
+            {fullPublicUrl}
+          </div>
+          <CopyUrlButton url={fullPublicUrl} />
+          <Link
+            href={publicPath}
+            target="_blank"
+            className="btn btn-primary btn-sm flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
             {t.forms.openPreview}
           </Link>
         </div>
