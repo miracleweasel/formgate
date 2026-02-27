@@ -20,7 +20,7 @@ pnpm build                  # Production build
 
 ---
 
-## Current State (19 Feb 2026 — updated)
+## Current State (27 Feb 2026 — updated)
 
 ### Implemented Features
 
@@ -30,8 +30,9 @@ pnpm build                  # Production build
 | **Multi-User Support** | ✅ Done | `lib/auth/requireUser.ts`, `lib/auth/getSessionEmail.ts` |
 | **Session Management** | ✅ Done | `lib/auth/session.ts`, `lib/auth/cookies.ts` |
 | **Form CRUD** | ✅ Done | `app/api/forms/route.ts`, `app/api/forms/[id]/route.ts` |
-| **Custom Fields** | ✅ Done | `lib/validation/fields.ts`, `lib/db/schema.ts` |
+| **Custom Fields (10 types)** | ✅ Done | `lib/validation/fields.ts`, `lib/db/schema.ts` |
 | **Admin Field Builder UI** | ✅ Done | `components/field-builder/`, `app/(dashboard)/forms/[id]/edit/` |
+| **Form Templates (6)** | ✅ Done | `lib/templates/formTemplates.ts`, `app/(dashboard)/forms/new/page.tsx` |
 | **Field Mapping Backlog** | ✅ Done | `lib/validation/backlogMapping.ts`, `lib/backlog/issue.ts` |
 | **Public Form Render** | ✅ Dynamic | `app/f/[slug]/public-form-client.tsx` |
 | **Form Submission** | ✅ Done | `app/api/public/forms/[slug]/submit/route.ts` |
@@ -60,6 +61,7 @@ pnpm build                  # Production build
 | **Magic Link Cleanup** | ✅ Done | Auto-cleanup expired tokens (`lib/auth/magicLink.ts`) |
 | **Landing Page** | ✅ Polished | Pain points, FAQ, SEO metadata, strong CTAs |
 | **Copywriting** | ✅ Polished | Natural Japanese/English, actionable errors, motivating empty states |
+| **SEO (robots, sitemap, OG)** | ✅ Done | `app/robots.ts`, `app/sitemap.ts`, `app/opengraph-image.tsx` |
 | **Tests** | ✅ 279 passing | `test/` (security, architecture, i18n, billing, backlog) |
 
 ### Pending Features
@@ -129,6 +131,7 @@ formgate/
 │   ├── email/                 # Resend email client
 │   ├── http/                  # Rate limiting (hardened), error helpers
 │   ├── i18n/                  # Translations (ja, en)
+│   ├── templates/             # Form templates (contact, bug report, etc.)
 │   └── validation/            # Zod schemas (forms, fields, backlogMapping)
 ├── drizzle/                   # SQL migrations (0001-0006)
 ├── test/                      # All tests (279)
@@ -345,11 +348,11 @@ pnpm test -- --grep "field"  # Run specific tests
 ## Recent Commits
 
 ```
-99b2854 feat: submission email notifications, welcome email, help page, copywriting polish
-874e845 style(ux): show full public URL with copy button on form detail page
-5d7d747 fix(billing): convert Date to ISO string for Drizzle SQL templates
-48a3ee0 feat: landing page polish, email template, copywriting, README/CLAUDE update
-76a246c feat(auth): replace password auth with magic link + multi-user support
+a2a4fe5 feat(fields): add 5 new field types and 6 form templates
+7467b01 feat(seo): add robots.txt, sitemap, OG image for social sharing
+482fdd4 chore: cleanup defaults, add FormGate favicon
+4ea72d9 fix(deploy): simplify Dockerfile for non-standalone mode
+84f2ab9 fix(deploy): remove standalone mode, use standard next start
 ```
 
 ---
@@ -371,4 +374,4 @@ Proprietary. All rights reserved.
 
 ---
 
-*Last updated: 19 February 2026*
+*Last updated: 27 February 2026*
