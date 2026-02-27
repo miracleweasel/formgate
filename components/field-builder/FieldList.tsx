@@ -22,6 +22,11 @@ const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   number: fb.typeNumber,
   textarea: fb.typeTextarea,
   select: fb.typeSelect,
+  url: fb.typeUrl,
+  phone: fb.typePhone,
+  date: fb.typeDate,
+  checkbox: fb.typeCheckbox,
+  radio: fb.typeRadio,
 };
 
 function createDefaultField(type: FieldType): FormField {
@@ -43,6 +48,16 @@ function createDefaultField(type: FieldType): FormField {
       return { ...base, type: "textarea" };
     case "select":
       return { ...base, type: "select", options: [{ value: "", label: "" }] };
+    case "url":
+      return { ...base, type: "url" };
+    case "phone":
+      return { ...base, type: "phone" };
+    case "date":
+      return { ...base, type: "date" };
+    case "checkbox":
+      return { ...base, type: "checkbox" };
+    case "radio":
+      return { ...base, type: "radio", options: [{ value: "", label: "" }] };
   }
 }
 

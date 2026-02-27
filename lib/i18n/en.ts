@@ -255,6 +255,11 @@ export const en: TranslationSchema = {
     typeNumber: "Number",
     typeTextarea: "Textarea",
     typeSelect: "Select",
+    typeUrl: "URL",
+    typePhone: "Phone",
+    typeDate: "Date",
+    typeCheckbox: "Checkbox",
+    typeRadio: "Radio",
     // Props
     fieldName: "Field Name",
     fieldLabel: "Label",
@@ -334,6 +339,20 @@ export const en: TranslationSchema = {
     notConnected: "Not connected",
     apiKeyNote: "API key is encrypted server-side. Never exposed to the client.",
     apiKeyStored: "Stored",
+  },
+
+  // ==========================================================================
+  // Templates
+  // ==========================================================================
+  templates: {
+    title: "Templates",
+    subtitle: "Choose a template to quickly create your form",
+    blank: { name: "Blank Form", description: "Start from scratch" },
+    contact: { name: "Contact", description: "Name, email, and message" },
+    bugReport: { name: "Bug Report", description: "Severity, steps to reproduce, and description" },
+    featureRequest: { name: "Feature Request", description: "Priority and feature description" },
+    feedback: { name: "Feedback", description: "Rating, category, and comments" },
+    support: { name: "Support", description: "Urgency, subject, and description" },
   },
 
   // ==========================================================================

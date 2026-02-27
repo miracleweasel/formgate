@@ -10,14 +10,16 @@ type Props = {
   fields: FormField[];
 };
 
-type FieldValue = string | number | null;
+type FieldValue = string | number | boolean | null;
 
 export default function PublicFormClient({ slug, fields }: Props) {
   // Initialize form state from field definitions
   const [values, setValues] = useState<Record<string, FieldValue>>(() => {
     const initial: Record<string, FieldValue> = {};
     for (const field of fields) {
-      initial[field.name] = field.type === "number" ? null : "";
+      if (field.type === "number") initial[field.name] = null;
+      else if (field.type === "checkbox") initial[field.name] = false;
+      else initial[field.name] = "";
     }
     return initial;
   });
@@ -47,7 +49,12 @@ export default function PublicFormClient({ slug, fields }: Props) {
 
       // Required check
       if (field.required) {
-        if (value === null || value === "" || value === undefined) {
+        if (field.type === "checkbox") {
+          if (value !== true) {
+            newErrors[field.name] = t.errors.required;
+            continue;
+          }
+        } else if (value === null || value === "" || value === undefined) {
           newErrors[field.name] = t.errors.required;
           continue;
         }
@@ -58,6 +65,15 @@ export default function PublicFormClient({ slug, fields }: Props) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(String(value))) {
           newErrors[field.name] = t.errors.invalidEmail;
+        }
+      }
+
+      // URL format check
+      if (field.type === "url" && value) {
+        try {
+          new URL(String(value));
+        } catch {
+          newErrors[field.name] = t.errors.invalidInput;
         }
       }
     }
@@ -226,12 +242,47 @@ function DynamicField({
             </option>
           ))}
         </select>
+      ) : field.type === "checkbox" ? (
+        <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--color-neutral-700)" }}>
+          <input
+            id={inputId}
+            type="checkbox"
+            checked={value === true}
+            onChange={(e) => onChange(e.target.checked)}
+            disabled={disabled}
+            style={{ accentColor: "var(--color-primary-500)" }}
+          />
+          {field.label}
+        </label>
+      ) : field.type === "radio" ? (
+        <div className="space-y-2">
+          {field.options.map((opt) => (
+            <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--color-neutral-700)" }}>
+              <input
+                type="radio"
+                name={inputId}
+                value={opt.value}
+                checked={value === opt.value}
+                onChange={() => onChange(opt.value)}
+                disabled={disabled}
+                style={{ accentColor: "var(--color-primary-500)" }}
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
       ) : (
         <input
           id={inputId}
           className={`input ${error ? "input-error" : ""}`}
-          type={field.type}
-          value={value ?? ""}
+          type={
+            field.type === "number" ? "number"
+              : field.type === "url" ? "url"
+              : field.type === "phone" ? "tel"
+              : field.type === "date" ? "date"
+              : field.type
+          }
+          value={String(value ?? "")}
           onChange={(e) =>
             onChange(
               field.type === "number"

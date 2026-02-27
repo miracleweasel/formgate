@@ -25,6 +25,11 @@ const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   number: fb.typeNumber,
   textarea: fb.typeTextarea,
   select: fb.typeSelect,
+  url: fb.typeUrl,
+  phone: fb.typePhone,
+  date: fb.typeDate,
+  checkbox: fb.typeCheckbox,
+  radio: fb.typeRadio,
 };
 
 export default function FieldEditor({
@@ -234,7 +239,7 @@ export default function FieldEditor({
         </div>
       )}
 
-      {field.type === "select" && (
+      {(field.type === "select" || field.type === "radio") && (
         <SelectOptionsEditor
           options={field.options}
           onChange={(options) => onChange({ options })}

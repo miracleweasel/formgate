@@ -223,6 +223,11 @@ export interface TranslationSchema {
     typeNumber: string;
     typeTextarea: string;
     typeSelect: string;
+    typeUrl: string;
+    typePhone: string;
+    typeDate: string;
+    typeCheckbox: string;
+    typeRadio: string;
     // Props
     fieldName: string;
     fieldLabel: string;
@@ -296,6 +301,17 @@ export interface TranslationSchema {
     notConnected: string;
     apiKeyNote: string;
     apiKeyStored: string;
+  };
+
+  templates: {
+    title: string;
+    subtitle: string;
+    blank: { name: string; description: string };
+    contact: { name: string; description: string };
+    bugReport: { name: string; description: string };
+    featureRequest: { name: string; description: string };
+    feedback: { name: string; description: string };
+    support: { name: string; description: string };
   };
 
   landing: {

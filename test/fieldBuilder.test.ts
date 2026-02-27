@@ -56,6 +56,16 @@ function createDefaultField(type: FieldType): FormField {
       return { ...base, type: "textarea" };
     case "select":
       return { ...base, type: "select", options: [{ value: "", label: "" }] };
+    case "url":
+      return { ...base, type: "url" };
+    case "phone":
+      return { ...base, type: "phone" };
+    case "date":
+      return { ...base, type: "date" };
+    case "checkbox":
+      return { ...base, type: "checkbox" };
+    case "radio":
+      return { ...base, type: "radio", options: [{ value: "", label: "" }] };
   }
 }
 
@@ -460,7 +470,7 @@ describe("Field Builder - All Field Types", () => {
       field.name = `test_${type}`;
       field.label = `Test ${type}`;
 
-      if (field.type === "select") {
+      if (field.type === "select" || field.type === "radio") {
         field.options = [{ value: "opt1", label: "Option 1" }];
       }
 

@@ -255,6 +255,11 @@ export const ja: TranslationSchema = {
     typeNumber: "数値",
     typeTextarea: "テキストエリア",
     typeSelect: "選択",
+    typeUrl: "URL",
+    typePhone: "電話番号",
+    typeDate: "日付",
+    typeCheckbox: "チェックボックス",
+    typeRadio: "ラジオボタン",
     // Props
     fieldName: "フィールド名",
     fieldLabel: "ラベル",
@@ -334,6 +339,20 @@ export const ja: TranslationSchema = {
     notConnected: "未接続",
     apiKeyNote: "APIキーはサーバー側で暗号化して保存されます。クライアントには公開されません。",
     apiKeyStored: "設定済み",
+  },
+
+  // ==========================================================================
+  // Templates
+  // ==========================================================================
+  templates: {
+    title: "テンプレート",
+    subtitle: "テンプレートを選択してフォームを素早く作成",
+    blank: { name: "空のフォーム", description: "ゼロから自由に作成" },
+    contact: { name: "お問い合わせ", description: "名前・メール・メッセージの基本フォーム" },
+    bugReport: { name: "バグ報告", description: "重要度・再現手順を含むバグ報告フォーム" },
+    featureRequest: { name: "機能リクエスト", description: "優先度付きの機能要望フォーム" },
+    feedback: { name: "フィードバック", description: "評価・カテゴリ付きのフィードバックフォーム" },
+    support: { name: "サポート", description: "緊急度付きのサポートリクエストフォーム" },
   },
 
   // ==========================================================================

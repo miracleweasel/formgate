@@ -7,7 +7,7 @@ import { z } from "zod";
 // Field Types
 // =============================================================================
 
-export const FIELD_TYPES = ["text", "email", "number", "textarea", "select"] as const;
+export const FIELD_TYPES = ["text", "email", "number", "textarea", "select", "url", "phone", "date", "checkbox", "radio"] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
 // =============================================================================
@@ -74,6 +74,35 @@ const SelectFieldSchema = BaseFieldSchema.extend({
     .max(50),
 });
 
+// URL field
+const UrlFieldSchema = BaseFieldSchema.extend({
+  type: z.literal("url"),
+});
+
+// Phone field
+const PhoneFieldSchema = BaseFieldSchema.extend({
+  type: z.literal("phone"),
+});
+
+// Date field
+const DateFieldSchema = BaseFieldSchema.extend({
+  type: z.literal("date"),
+});
+
+// Checkbox field (single boolean)
+const CheckboxFieldSchema = BaseFieldSchema.extend({
+  type: z.literal("checkbox"),
+});
+
+// Radio field (requires options, like select but rendered as radio buttons)
+const RadioFieldSchema = BaseFieldSchema.extend({
+  type: z.literal("radio"),
+  options: z
+    .array(SelectOptionSchema)
+    .min(1, "Radio requires at least one option")
+    .max(50),
+});
+
 // =============================================================================
 // Combined Field Schema
 // =============================================================================
@@ -84,6 +113,11 @@ export const FormFieldSchema = z.discriminatedUnion("type", [
   NumberFieldSchema,
   TextareaFieldSchema,
   SelectFieldSchema,
+  UrlFieldSchema,
+  PhoneFieldSchema,
+  DateFieldSchema,
+  CheckboxFieldSchema,
+  RadioFieldSchema,
 ]);
 
 export type FormField = z.infer<typeof FormFieldSchema>;
@@ -182,6 +216,58 @@ export function buildSubmissionSchema(
       }
 
       case "select": {
+        const validValues = field.options.map((o) => o.value);
+        const s = z.enum(validValues as [string, ...string[]]);
+        fieldSchema = field.required
+          ? s
+          : s.optional().or(z.literal("")).or(z.null());
+        break;
+      }
+
+      case "url": {
+        const s = z.string().trim().url("Invalid URL format");
+        fieldSchema = field.required
+          ? s.min(1, `${field.label} is required`)
+          : s.optional().or(z.literal("")).or(z.null());
+        break;
+      }
+
+      case "phone": {
+        const s = z
+          .string()
+          .trim()
+          .regex(/^[+\d][\d\s\-().]{2,30}$/, "Invalid phone number");
+        fieldSchema = field.required
+          ? s.min(1, `${field.label} is required`)
+          : s.optional().or(z.literal("")).or(z.null());
+        break;
+      }
+
+      case "date": {
+        // Accepts YYYY-MM-DD format from date input
+        const s = z
+          .string()
+          .trim()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format");
+        fieldSchema = field.required
+          ? s.min(1, `${field.label} is required`)
+          : s.optional().or(z.literal("")).or(z.null());
+        break;
+      }
+
+      case "checkbox": {
+        // Checkbox returns boolean
+        if (field.required) {
+          fieldSchema = z
+            .boolean()
+            .refine((v) => v === true, { message: `${field.label} is required` });
+        } else {
+          fieldSchema = z.boolean().optional().or(z.null());
+        }
+        break;
+      }
+
+      case "radio": {
         const validValues = field.options.map((o) => o.value);
         const s = z.enum(validValues as [string, ...string[]]);
         fieldSchema = field.required

@@ -60,9 +60,30 @@ export default function FormPreview({ fields, formName }: Props) {
                       </option>
                     ))}
                   </select>
+                ) : field.type === "checkbox" ? (
+                  <label className="flex items-center gap-2 text-sm" style={{ color: "var(--color-neutral-700)" }}>
+                    <input type="checkbox" disabled style={{ accentColor: "var(--color-primary-500)" }} />
+                    {field.label || field.name}
+                  </label>
+                ) : field.type === "radio" ? (
+                  <div className="space-y-2">
+                    {field.options.map((opt, oi) => (
+                      <label key={oi} className="flex items-center gap-2 text-sm" style={{ color: "var(--color-neutral-700)" }}>
+                        <input type="radio" name={`preview-${field.name}`} disabled style={{ accentColor: "var(--color-primary-500)" }} />
+                        {opt.label || opt.value}
+                      </label>
+                    ))}
+                  </div>
                 ) : (
                   <input
-                    type={field.type === "email" ? "email" : field.type === "number" ? "number" : "text"}
+                    type={
+                      field.type === "email" ? "email"
+                        : field.type === "number" ? "number"
+                        : field.type === "url" ? "url"
+                        : field.type === "phone" ? "tel"
+                        : field.type === "date" ? "date"
+                        : "text"
+                    }
                     placeholder={field.placeholder || ""}
                     className="input"
                     disabled

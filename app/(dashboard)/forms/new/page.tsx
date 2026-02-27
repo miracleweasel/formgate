@@ -5,15 +5,27 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t } from "@/lib/i18n";
+import { getFormTemplates } from "@/lib/templates/formTemplates";
+import type { TemplateId } from "@/lib/templates/formTemplates";
+import type { FormField } from "@/lib/validation/fields";
+
+const templates = getFormTemplates();
 
 export default function NewFormPage() {
   const router = useRouter();
 
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("blank");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function getTemplateFields(): FormField[] | undefined {
+    const tpl = templates.find((t) => t.id === selectedTemplate);
+    if (!tpl || tpl.fields.length === 0) return undefined;
+    return tpl.fields;
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +40,7 @@ export default function NewFormPage() {
 
     setSubmitting(true);
     try {
+      const fields = getTemplateFields();
       const res = await fetch("/api/forms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,6 +48,7 @@ export default function NewFormPage() {
           name: n,
           slug: s,
           description: d ? d : null,
+          ...(fields ? { fields } : {}),
         }),
       });
 
@@ -64,6 +78,39 @@ export default function NewFormPage() {
       </div>
 
       <h1 className="page-header-title">{t.forms.createTitle}</h1>
+
+      {/* Template selector */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-medium" style={{ color: "var(--color-neutral-600)" }}>
+          {t.templates.title}
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {templates.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              onClick={() => setSelectedTemplate(tpl.id)}
+              className="text-left rounded-lg p-3 transition-all"
+              style={{
+                border: selectedTemplate === tpl.id
+                  ? "2px solid var(--color-primary-500)"
+                  : "2px solid var(--color-neutral-200)",
+                background: selectedTemplate === tpl.id
+                  ? "var(--color-primary-50)"
+                  : "var(--color-neutral-0)",
+              }}
+            >
+              <div className="text-lg mb-1">{tpl.icon}</div>
+              <div className="text-sm font-medium" style={{ color: "var(--color-neutral-800)" }}>
+                {tpl.name}
+              </div>
+              <div className="text-xs mt-0.5" style={{ color: "var(--color-neutral-500)" }}>
+                {tpl.description}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <form onSubmit={onSubmit} className="card space-y-6">
         <div className="form-field">
