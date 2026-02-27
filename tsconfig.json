@@ -28,7 +28,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
-  ],
+    "**/*.mts", 
+    "test/setup-env.js"  ],
   "exclude": ["node_modules"]
 }
