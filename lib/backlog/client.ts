@@ -183,6 +183,8 @@ export async function createBacklogIssueBestEffort(args: {
   priorityId?: number;
   issueTypeId?: number;
   customFields?: CustomFieldValue[];
+  assigneeId?: number;
+  attachmentId?: number[];
 }) {
   const cfg: BacklogClientConfig = { spaceUrl: args.spaceUrl, apiKey: args.apiKey };
 
@@ -217,7 +219,17 @@ export async function createBacklogIssueBestEffort(args: {
     priorityId: args.priorityId ?? 3, // Default: Normal
   };
 
-  // 4) Add custom fields if provided
+  // 4) Add assignee if provided
+  if (args.assigneeId) {
+    issueBody.assigneeId = args.assigneeId;
+  }
+
+  // 5) Add attachment IDs if provided
+  if (args.attachmentId && args.attachmentId.length > 0) {
+    issueBody["attachmentId[]"] = args.attachmentId;
+  }
+
+  // 6) Add custom fields if provided
   if (args.customFields && args.customFields.length > 0) {
     for (const cf of args.customFields) {
       if (cf.value !== null && cf.value !== undefined && cf.value !== "") {
@@ -227,11 +239,87 @@ export async function createBacklogIssueBestEffort(args: {
     }
   }
 
-  // 5) Create issue
-  const createRes = await backlogPostJson<any>(cfg, "/api/v2/issues", issueBody);
+  // 7) Create issue
+  const createRes = await backlogPostJson<{ id: number }>(cfg, "/api/v2/issues", issueBody);
 
   if (!createRes.ok) return { ok: false as const, error: "issue_create_failed" };
-  return { ok: true as const };
+  return {
+    ok: true as const,
+    issueId: createRes.data.id,
+    projectId: project.id,
+    issueTypeId,
+  };
+}
+
+/**
+ * Create sub-tasks for a parent issue.
+ * Best-effort: failures don't affect the parent.
+ */
+export async function createBacklogSubTasks(args: {
+  spaceUrl: string;
+  apiKey: string;
+  parentIssueId: number;
+  projectId: number;
+  issueTypeId: number;
+  subTasks: { summary: string; assigneeId?: number }[];
+}) {
+  const cfg: BacklogClientConfig = { spaceUrl: args.spaceUrl, apiKey: args.apiKey };
+
+  for (const task of args.subTasks) {
+    const body: Record<string, unknown> = {
+      projectId: args.projectId,
+      summary: task.summary,
+      issueTypeId: args.issueTypeId,
+      priorityId: 3,
+      parentIssueId: args.parentIssueId,
+    };
+    if (task.assigneeId) {
+      body.assigneeId = task.assigneeId;
+    }
+    await backlogPostJson(cfg, "/api/v2/issues", body);
+  }
+}
+
+/**
+ * Upload a file attachment to Backlog space.
+ * Returns attachment ID on success.
+ */
+export async function backlogUploadAttachment(
+  cfg: BacklogClientConfig,
+  fileBuffer: Uint8Array,
+  filename: string
+): Promise<{ ok: true; id: number } | { ok: false; error: string }> {
+  if (!checkBacklogRateLimit(cfg.spaceUrl)) {
+    return { ok: false, error: "rate_limited" };
+  }
+
+  const url = makeBacklogApiUrl(cfg, "/api/v2/space/attachment");
+
+  const formData = new FormData();
+  const ab = fileBuffer.buffer.slice(
+    fileBuffer.byteOffset,
+    fileBuffer.byteOffset + fileBuffer.byteLength
+  ) as ArrayBuffer;
+  const blob = new Blob([ab]);
+  formData.append("file", blob, filename);
+
+  let res: Response;
+  try {
+    res = await fetch(url, { method: "POST", body: formData });
+  } catch {
+    return { ok: false, error: "network_error" };
+  }
+
+  if (!res.ok) {
+    return { ok: false, error: "upload_failed" };
+  }
+
+  try {
+    const data = (await res.json()) as { id: number };
+    return { ok: true, id: data.id };
+  } catch {
+    return { ok: false, error: "invalid_json" };
+  }
 }
 
 /**

@@ -241,6 +241,6 @@ describe("DEFAULT_FIELDS", () => {
 
 describe("FIELD_TYPES", () => {
   it("has all expected types", () => {
-    assert.deepEqual([...FIELD_TYPES], ["text", "email", "number", "textarea", "select", "url", "phone", "date", "checkbox", "radio"]);
+    assert.deepEqual([...FIELD_TYPES], ["text", "email", "number", "textarea", "select", "url", "phone", "date", "checkbox", "radio", "file"]);
   });
 });

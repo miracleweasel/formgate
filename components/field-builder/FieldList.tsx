@@ -27,6 +27,7 @@ const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   date: fb.typeDate,
   checkbox: fb.typeCheckbox,
   radio: fb.typeRadio,
+  file: fb.typeFile,
 };
 
 function createDefaultField(type: FieldType): FormField {
@@ -58,6 +59,8 @@ function createDefaultField(type: FieldType): FormField {
       return { ...base, type: "checkbox" };
     case "radio":
       return { ...base, type: "radio", options: [{ value: "", label: "" }] };
+    case "file":
+      return { ...base, type: "file" };
   }
 }
 

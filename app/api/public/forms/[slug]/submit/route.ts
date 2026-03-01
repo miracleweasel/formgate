@@ -9,7 +9,9 @@ import {
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { buildMappedIssue } from "@/lib/backlog/issue";
-import { createBacklogIssueBestEffort, type CustomFieldValue } from "@/lib/backlog/client";
+import { createBacklogIssueBestEffort, createBacklogSubTasks, backlogUploadAttachment, type CustomFieldValue } from "@/lib/backlog/client";
+import { evaluateAssignmentRule, applyTemplate } from "@/lib/validation/backlogMapping";
+import { FILE_MAX_SIZE, FILE_MAX_COUNT, FILE_ALLOWED_TYPES } from "@/lib/validation/fields";
 import { decryptString } from "@/lib/crypto";
 import { getClientIp, rateLimitOrNull } from "@/lib/http/rateLimit";
 import {
@@ -60,15 +62,106 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // 2) parse body
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  // 2) parse body (JSON or FormData)
+  const fieldDefs: FormField[] =
+    form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS;
+
+  let rawPayload: unknown;
+  const uploadedFiles: { fieldName: string; buffer: Uint8Array; filename: string }[] = [];
+
+  const contentType = req.headers.get("content-type") ?? "";
+
+  if (contentType.includes("multipart/form-data")) {
+    // FormData mode (with file uploads)
+    let formData: FormData;
+    try {
+      formData = await req.formData();
+    } catch {
+      return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+    }
+
+    // Extract JSON payload from _payload field
+    const payloadStr = formData.get("_payload");
+    if (typeof payloadStr !== "string") {
+      return NextResponse.json({ error: "Missing _payload field" }, { status: 400 });
+    }
+    try {
+      rawPayload = JSON.parse(payloadStr);
+    } catch {
+      return NextResponse.json({ error: "Invalid _payload JSON" }, { status: 400 });
+    }
+
+    // Extract file fields
+    const fileFieldNames = new Set(
+      fieldDefs.filter((f) => f.type === "file").map((f) => f.name)
+    );
+
+    let fileCount = 0;
+    for (const [key, value] of formData.entries()) {
+      if (key === "_payload") continue;
+      if (!fileFieldNames.has(key)) continue;
+      if (!(value instanceof File)) continue;
+      if (value.size === 0) continue;
+
+      fileCount++;
+      if (fileCount > FILE_MAX_COUNT) {
+        return NextResponse.json(
+          { error: "Too many files", message: `Maximum ${FILE_MAX_COUNT} files allowed` },
+          { status: 400 }
+        );
+      }
+
+      // Validate file size
+      const fieldDef = fieldDefs.find((f) => f.name === key);
+      const maxSize = (fieldDef && fieldDef.type === "file" && fieldDef.maxFileSize)
+        ? fieldDef.maxFileSize
+        : FILE_MAX_SIZE;
+
+      if (value.size > maxSize) {
+        return NextResponse.json(
+          { error: "File too large", field: key, message: `Maximum ${Math.round(maxSize / 1024 / 1024)}MB allowed` },
+          { status: 400 }
+        );
+      }
+
+      // Validate file type
+      if (!FILE_ALLOWED_TYPES.some((t) => value.type === t || (t.endsWith("/*") && value.type.startsWith(t.replace("/*", "/"))))) {
+        return NextResponse.json(
+          { error: "Invalid file type", field: key, message: "File type not allowed" },
+          { status: 400 }
+        );
+      }
+
+      const arrayBuffer = await value.arrayBuffer();
+      uploadedFiles.push({
+        fieldName: key,
+        buffer: new Uint8Array(arrayBuffer),
+        filename: value.name,
+      });
+    }
+
+    // Validate required file fields
+    for (const fd of fieldDefs) {
+      if (fd.type === "file" && fd.required) {
+        if (!uploadedFiles.some((f) => f.fieldName === fd.name)) {
+          return NextResponse.json(
+            { error: "Validation failed", field: fd.name, message: `${fd.label} is required` },
+            { status: 400 }
+          );
+        }
+      }
+    }
+  } else {
+    // Standard JSON mode
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+    rawPayload = (body as any)?.payload;
   }
 
-  const rawPayload = (body as any)?.payload;
   if (!isPlainObject(rawPayload)) {
     return NextResponse.json(
       { error: "Invalid payload (must be an object)" },
@@ -76,10 +169,7 @@ export async function POST(
     );
   }
 
-  // 3) Validate payload against field schema
-  const fieldDefs: FormField[] =
-    form.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS;
-
+  // 3) Validate payload against field schema (file fields are skipped)
   const submissionSchema = buildSubmissionSchema(fieldDefs);
   const validationResult = submissionSchema.safeParse(rawPayload);
 
@@ -208,7 +298,28 @@ export async function POST(
         }
       }
 
-      await createBacklogIssueBestEffort({
+      // Evaluate assignment rule
+      const assigneeId = evaluateAssignmentRule(
+        setting.fieldMapping?.assignmentRule,
+        payload
+      );
+
+      // Upload file attachments to Backlog if any
+      const attachmentIds: number[] = [];
+      if (uploadedFiles.length > 0) {
+        for (const uf of uploadedFiles) {
+          const uploadRes = await backlogUploadAttachment(
+            { spaceUrl, apiKey },
+            uf.buffer,
+            uf.filename
+          );
+          if (uploadRes.ok) {
+            attachmentIds.push(uploadRes.id);
+          }
+        }
+      }
+
+      const result = await createBacklogIssueBestEffort({
         spaceUrl,
         apiKey,
         projectKey,
@@ -217,7 +328,30 @@ export async function POST(
         priorityId: issueData.priorityId,
         issueTypeId: issueData.issueTypeId,
         customFields: customFields.length > 0 ? customFields : undefined,
+        assigneeId,
+        attachmentId: attachmentIds.length > 0 ? attachmentIds : undefined,
       });
+
+      // Create sub-tasks if configured and parent issue was created
+      if (
+        result.ok &&
+        setting.fieldMapping?.subTasks &&
+        setting.fieldMapping.subTasks.length > 0
+      ) {
+        const resolvedSubTasks = setting.fieldMapping.subTasks.map((st) => ({
+          summary: applyTemplate(st.summary, payload),
+          assigneeId: st.assigneeId,
+        }));
+
+        await createBacklogSubTasks({
+          spaceUrl,
+          apiKey,
+          parentIssueId: result.issueId,
+          projectId: result.projectId,
+          issueTypeId: result.issueTypeId,
+          subTasks: resolvedSubTasks,
+        });
+      }
     } catch {
       // Neutral server log ONLY (no apiKey, no headers, no payload dump)
       console.error("[public/submit][backlog] failed");

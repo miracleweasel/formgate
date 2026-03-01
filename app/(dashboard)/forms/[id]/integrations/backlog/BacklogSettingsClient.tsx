@@ -17,12 +17,29 @@ type Props = {
   formFields: FormFieldDef[];
 };
 
+type AssignmentRuleMatch = { value: string; assigneeId: number };
+
+type AssignmentRule = {
+  type: "static" | "field_match";
+  assigneeId?: number;
+  field?: string;
+  rules?: AssignmentRuleMatch[];
+  fallbackAssigneeId?: number;
+};
+
+type SubTaskTemplate = {
+  summary: string;
+  assigneeId?: number;
+};
+
 type FieldMapping = {
   summary?: { type: "field" | "template"; field?: string; template?: string };
   description?: { type: "field" | "template" | "auto"; field?: string; template?: string };
   issueTypeId?: number;
   priorityId?: number;
   customFields?: { backlogFieldId: number; formFieldName: string }[];
+  assignmentRule?: AssignmentRule;
+  subTasks?: SubTaskTemplate[];
 };
 
 type GetResp =
@@ -41,6 +58,7 @@ type ProjectMeta = {
   issueTypes: { id: number; name: string }[];
   customFields: { id: number; name: string; typeId: number }[];
   priorities: { id: number; name: string }[];
+  members: { id: number; name: string }[];
 };
 
 function normalizeProjectKey(v: string) {
@@ -78,6 +96,16 @@ export default function BacklogSettingsClient({ formId, formFields }: Props) {
     { backlogFieldId: number; formFieldName: string }[]
   >([]);
 
+  // Assignment rule state
+  const [assignType, setAssignType] = useState<"none" | "static" | "field_match">("none");
+  const [assignStaticId, setAssignStaticId] = useState<number>(0);
+  const [assignField, setAssignField] = useState("");
+  const [assignRules, setAssignRules] = useState<AssignmentRuleMatch[]>([]);
+  const [assignFallbackId, setAssignFallbackId] = useState<number>(0);
+
+  // Sub-tasks state
+  const [subTasks, setSubTasks] = useState<SubTaskTemplate[]>([]);
+
   // Project metadata from Backlog API
   const [meta, setMeta] = useState<ProjectMeta | null>(null);
   const [metaLoading, setMetaLoading] = useState(false);
@@ -103,6 +131,12 @@ export default function BacklogSettingsClient({ formId, formFields }: Props) {
       setIssueTypeId(0);
       setPriorityId(0);
       setCustomFieldMappings([]);
+      setAssignType("none");
+      setAssignStaticId(0);
+      setAssignField("");
+      setAssignRules([]);
+      setAssignFallbackId(0);
+      setSubTasks([]);
       return;
     }
 
@@ -125,6 +159,24 @@ export default function BacklogSettingsClient({ formId, formFields }: Props) {
     setIssueTypeId(mapping.issueTypeId ?? 0);
     setPriorityId(mapping.priorityId ?? 0);
     setCustomFieldMappings(mapping.customFields ?? []);
+
+    // Assignment rule
+    if (mapping.assignmentRule) {
+      setAssignType(mapping.assignmentRule.type);
+      setAssignStaticId(mapping.assignmentRule.assigneeId ?? 0);
+      setAssignField(mapping.assignmentRule.field ?? "");
+      setAssignRules(mapping.assignmentRule.rules ?? []);
+      setAssignFallbackId(mapping.assignmentRule.fallbackAssigneeId ?? 0);
+    } else {
+      setAssignType("none");
+      setAssignStaticId(0);
+      setAssignField("");
+      setAssignRules([]);
+      setAssignFallbackId(0);
+    }
+
+    // Sub-tasks
+    setSubTasks(mapping.subTasks ?? []);
   }
 
   // Build mapping from state
@@ -154,6 +206,23 @@ export default function BacklogSettingsClient({ formId, formFields }: Props) {
     );
     if (validCf.length > 0) mapping.customFields = validCf;
 
+    // Assignment rule
+    if (assignType === "static" && assignStaticId > 0) {
+      mapping.assignmentRule = { type: "static", assigneeId: assignStaticId };
+    } else if (assignType === "field_match" && assignField) {
+      const validRules = assignRules.filter((r) => r.value.trim() && r.assigneeId > 0);
+      mapping.assignmentRule = {
+        type: "field_match",
+        field: assignField,
+        rules: validRules.length > 0 ? validRules : undefined,
+        fallbackAssigneeId: assignFallbackId > 0 ? assignFallbackId : undefined,
+      };
+    }
+
+    // Sub-tasks
+    const validSt = subTasks.filter((st) => st.summary.trim());
+    if (validSt.length > 0) mapping.subTasks = validSt;
+
     // Return null if only default description (auto)
     const keys = Object.keys(mapping);
     if (keys.length === 1 && mapping.description?.type === "auto") return null;
@@ -181,6 +250,7 @@ export default function BacklogSettingsClient({ formId, formFields }: Props) {
           issueTypes: data.issueTypes ?? [],
           customFields: data.customFields ?? [],
           priorities: data.priorities ?? [],
+          members: data.members ?? [],
         });
       } else {
         setMetaError(true);
@@ -700,6 +770,192 @@ export default function BacklogSettingsClient({ formId, formFields }: Props) {
                       </button>
                     )}
                   </>
+                )}
+              </div>
+
+              {/* Assignment Rule */}
+              <div className="space-y-2">
+                <div className="text-sm font-medium" style={{ color: "var(--color-neutral-700)" }}>
+                  {bl.assignment}
+                </div>
+                <p className="text-xs" style={{ color: "var(--color-neutral-500)" }}>
+                  {bl.assignmentDesc}
+                </p>
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="assignType"
+                      checked={assignType === "none"}
+                      onChange={() => setAssignType("none")}
+                    />
+                    {bl.assignNone}
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="assignType"
+                      checked={assignType === "static"}
+                      onChange={() => setAssignType("static")}
+                    />
+                    {bl.assignStatic}
+                  </label>
+                  {assignType === "static" && (
+                    <select
+                      value={assignStaticId}
+                      onChange={(e) => setAssignStaticId(Number(e.target.value))}
+                      className="input"
+                    >
+                      <option value={0}>{bl.assignSelectMember}</option>
+                      {meta.members.map((m) => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                  )}
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="assignType"
+                      checked={assignType === "field_match"}
+                      onChange={() => setAssignType("field_match")}
+                    />
+                    {bl.assignFieldMatch}
+                  </label>
+                  {assignType === "field_match" && (
+                    <div className="space-y-2 pl-6">
+                      <select
+                        value={assignField}
+                        onChange={(e) => setAssignField(e.target.value)}
+                        className="input"
+                      >
+                        <option value="">{bl.summaryFieldSelect}</option>
+                        {formFields.map((f) => (
+                          <option key={f.name} value={f.name}>
+                            {f.label} ({f.name})
+                          </option>
+                        ))}
+                      </select>
+                      {assignRules.map((r, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <input
+                            value={r.value}
+                            onChange={(e) => {
+                              const next = [...assignRules];
+                              next[idx] = { ...next[idx], value: e.target.value };
+                              setAssignRules(next);
+                            }}
+                            placeholder={bl.assignRuleValue}
+                            className="input flex-1"
+                          />
+                          <span className="text-xs" style={{ color: "var(--color-neutral-400)" }}>→</span>
+                          <select
+                            value={r.assigneeId}
+                            onChange={(e) => {
+                              const next = [...assignRules];
+                              next[idx] = { ...next[idx], assigneeId: Number(e.target.value) };
+                              setAssignRules(next);
+                            }}
+                            className="input flex-1"
+                          >
+                            <option value={0}>{bl.assignSelectMember}</option>
+                            {meta.members.map((m) => (
+                              <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => setAssignRules(assignRules.filter((_, i) => i !== idx))}
+                            className="btn btn-secondary btn-sm"
+                            style={{ color: "var(--color-error-600)" }}
+                          >
+                            {bl.removeCustomField}
+                          </button>
+                        </div>
+                      ))}
+                      {assignRules.length < 20 && (
+                        <button
+                          type="button"
+                          onClick={() => setAssignRules([...assignRules, { value: "", assigneeId: 0 }])}
+                          className="btn btn-secondary btn-sm"
+                        >
+                          + {bl.assignAddRule}
+                        </button>
+                      )}
+                      <div className="space-y-1">
+                        <div className="text-xs" style={{ color: "var(--color-neutral-500)" }}>
+                          {bl.assignFallback}
+                        </div>
+                        <select
+                          value={assignFallbackId}
+                          onChange={(e) => setAssignFallbackId(Number(e.target.value))}
+                          className="input"
+                        >
+                          <option value={0}>{bl.assignNone}</option>
+                          {meta.members.map((m) => (
+                            <option key={m.id} value={m.id}>{m.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sub-tasks */}
+              <div className="space-y-2">
+                <div className="text-sm font-medium" style={{ color: "var(--color-neutral-700)" }}>
+                  {bl.subTasks}
+                </div>
+                <p className="text-xs" style={{ color: "var(--color-neutral-500)" }}>
+                  {bl.subTasksDesc}
+                </p>
+                {subTasks.map((st, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      value={st.summary}
+                      onChange={(e) => {
+                        const next = [...subTasks];
+                        next[idx] = { ...next[idx], summary: e.target.value };
+                        setSubTasks(next);
+                      }}
+                      placeholder={bl.subTaskSummaryPlaceholder}
+                      className="input flex-1"
+                      maxLength={500}
+                    />
+                    <select
+                      value={st.assigneeId ?? 0}
+                      onChange={(e) => {
+                        const next = [...subTasks];
+                        const v = Number(e.target.value);
+                        next[idx] = { ...next[idx], assigneeId: v > 0 ? v : undefined };
+                        setSubTasks(next);
+                      }}
+                      className="input"
+                      style={{ maxWidth: "200px" }}
+                    >
+                      <option value={0}>{bl.assignNone}</option>
+                      {meta.members.map((m) => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setSubTasks(subTasks.filter((_, i) => i !== idx))}
+                      className="btn btn-secondary btn-sm"
+                      style={{ color: "var(--color-error-600)" }}
+                    >
+                      {bl.removeCustomField}
+                    </button>
+                  </div>
+                ))}
+                {subTasks.length < 5 && (
+                  <button
+                    type="button"
+                    onClick={() => setSubTasks([...subTasks, { summary: "" }])}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    + {bl.subTaskAdd}
+                  </button>
                 )}
               </div>
             </>

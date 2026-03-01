@@ -30,6 +30,7 @@ const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   date: fb.typeDate,
   checkbox: fb.typeCheckbox,
   radio: fb.typeRadio,
+  file: fb.typeFile,
 };
 
 export default function FieldEditor({
@@ -245,6 +246,47 @@ export default function FieldEditor({
           onChange={(options) => onChange({ options })}
           disabled={disabled}
         />
+      )}
+
+      {field.type === "file" && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs" style={{ color: "var(--color-neutral-600)" }}>
+              {fb.fileAccept}
+            </label>
+            <input
+              value={(field as any).accept ?? ""}
+              onChange={(e) => onChange({ accept: e.target.value } as any)}
+              placeholder="image/*,.pdf,.docx"
+              className="input"
+              maxLength={500}
+              disabled={disabled}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs" style={{ color: "var(--color-neutral-600)" }}>
+              {fb.fileMaxSize}
+            </label>
+            <input
+              type="number"
+              value={(field as any).maxFileSize ? (field as any).maxFileSize / (1024 * 1024) : ""}
+              onChange={(e) =>
+                onChange({
+                  maxFileSize: e.target.value
+                    ? Math.min(Math.round(parseFloat(e.target.value) * 1024 * 1024), 10_485_760)
+                    : undefined,
+                } as any)
+              }
+              placeholder="10"
+              className="input"
+              min={0.1}
+              max={10}
+              step={0.1}
+              disabled={disabled}
+            />
+            <div className="text-xs" style={{ color: "var(--color-neutral-400)" }}>MB (max 10)</div>
+          </div>
+        </div>
       )}
     </div>
   );

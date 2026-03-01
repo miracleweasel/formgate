@@ -37,6 +37,30 @@ export const CustomFieldMappingSchema = z.object({
   formFieldName: z.string(),
 });
 
+// Assignment rule - static or field-based
+export const AssignmentRuleMatchSchema = z.object({
+  value: z.string().trim().min(1).max(200),
+  assigneeId: z.number().int().positive(),
+});
+
+export const AssignmentRuleSchema = z.object({
+  type: z.enum(["static", "field_match"]),
+  // For "static": always assign to this member
+  assigneeId: z.number().int().positive().optional(),
+  // For "field_match": which form field to check
+  field: z.string().optional(),
+  // For "field_match": value → assignee mapping rules
+  rules: z.array(AssignmentRuleMatchSchema).max(20).optional(),
+  // For "field_match": fallback if no rule matches
+  fallbackAssigneeId: z.number().int().positive().optional(),
+});
+
+// Sub-task template
+export const SubTaskTemplateSchema = z.object({
+  summary: z.string().trim().min(1).max(500),
+  assigneeId: z.number().int().positive().optional(),
+});
+
 // Complete field mapping configuration
 export const BacklogFieldMappingSchema = z.object({
   // Summary (issue title) mapping
@@ -53,12 +77,20 @@ export const BacklogFieldMappingSchema = z.object({
 
   // Custom field mappings
   customFields: z.array(CustomFieldMappingSchema).max(20).optional(),
+
+  // Assignment rule
+  assignmentRule: AssignmentRuleSchema.optional(),
+
+  // Sub-task templates (created after parent issue)
+  subTasks: z.array(SubTaskTemplateSchema).max(5).optional(),
 });
 
 export type BacklogFieldMapping = z.infer<typeof BacklogFieldMappingSchema>;
 export type SummaryMapping = z.infer<typeof SummaryMappingSchema>;
 export type DescriptionMapping = z.infer<typeof DescriptionMappingSchema>;
 export type CustomFieldMapping = z.infer<typeof CustomFieldMappingSchema>;
+export type AssignmentRule = z.infer<typeof AssignmentRuleSchema>;
+export type SubTaskTemplate = z.infer<typeof SubTaskTemplateSchema>;
 
 /**
  * Default mapping - backward compatible behavior
@@ -68,6 +100,32 @@ export const DEFAULT_BACKLOG_MAPPING: BacklogFieldMapping = {
   description: { type: "auto" }, // Include all fields
   priorityId: 3, // Normal
 };
+
+/**
+ * Evaluate assignment rule to determine assigneeId
+ */
+export function evaluateAssignmentRule(
+  rule: AssignmentRule | undefined,
+  payload: Record<string, unknown>
+): number | undefined {
+  if (!rule) return undefined;
+
+  if (rule.type === "static") {
+    return rule.assigneeId;
+  }
+
+  if (rule.type === "field_match" && rule.field && rule.rules) {
+    const fieldValue = String(payload[rule.field] ?? "").trim().toLowerCase();
+    for (const r of rule.rules) {
+      if (r.value.trim().toLowerCase() === fieldValue) {
+        return r.assigneeId;
+      }
+    }
+    return rule.fallbackAssigneeId;
+  }
+
+  return undefined;
+}
 
 /**
  * Apply template string with form field values

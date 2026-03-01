@@ -74,6 +74,12 @@ export default function FormPreview({ fields, formName }: Props) {
                       </label>
                     ))}
                   </div>
+                ) : field.type === "file" ? (
+                  <input
+                    type="file"
+                    className="input"
+                    disabled
+                  />
                 ) : (
                   <input
                     type={

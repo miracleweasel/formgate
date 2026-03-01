@@ -113,6 +113,8 @@ export interface TranslationSchema {
     thankYouMessage: string;
     poweredBy: string;
     formNotFound: string;
+    fileTooLarge: string;
+    tooManyFiles: string;
   };
 
   integrations: {
@@ -175,6 +177,21 @@ export interface TranslationSchema {
       loadingMeta: string;
       loadMetaFailed: string;
       refreshMeta: string;
+      // Assignment
+      assignment: string;
+      assignmentDesc: string;
+      assignNone: string;
+      assignStatic: string;
+      assignFieldMatch: string;
+      assignSelectMember: string;
+      assignRuleValue: string;
+      assignAddRule: string;
+      assignFallback: string;
+      // Sub-tasks
+      subTasks: string;
+      subTasksDesc: string;
+      subTaskSummaryPlaceholder: string;
+      subTaskAdd: string;
     };
   };
 
@@ -228,6 +245,10 @@ export interface TranslationSchema {
     typeDate: string;
     typeCheckbox: string;
     typeRadio: string;
+    typeFile: string;
+    // File field
+    fileAccept: string;
+    fileMaxSize: string;
     // Props
     fieldName: string;
     fieldLabel: string;

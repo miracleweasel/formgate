@@ -66,6 +66,8 @@ function createDefaultField(type: FieldType): FormField {
       return { ...base, type: "checkbox" };
     case "radio":
       return { ...base, type: "radio", options: [{ value: "", label: "" }] };
+    case "file":
+      return { ...base, type: "file" };
   }
 }
 

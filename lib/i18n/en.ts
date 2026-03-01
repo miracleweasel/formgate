@@ -133,6 +133,8 @@ export const en: TranslationSchema = {
     thankYouMessage: "Your inquiry has been received. Thank you!",
     poweredBy: "Powered by FormGate",
     formNotFound: "This form does not exist or has been deleted.",
+    fileTooLarge: "File is too large.",
+    tooManyFiles: "Too many files (maximum 3).",
   },
 
   // ==========================================================================
@@ -198,6 +200,21 @@ export const en: TranslationSchema = {
       loadingMeta: "Loading project info...",
       loadMetaFailed: "Failed to load project info.",
       refreshMeta: "Refresh",
+      // Assignment
+      assignment: "Auto-assign",
+      assignmentDesc: "Automatically set the assignee when creating issues.",
+      assignNone: "No assignment",
+      assignStatic: "Static member",
+      assignFieldMatch: "Based on field value",
+      assignSelectMember: "Select member",
+      assignRuleValue: "Field value",
+      assignAddRule: "Add rule",
+      assignFallback: "Fallback if no rule matches",
+      // Sub-tasks
+      subTasks: "Auto sub-tasks",
+      subTasksDesc: "Automatically create sub-tasks after the parent issue (max 5). Use {fieldName} in summary for templates.",
+      subTaskSummaryPlaceholder: "e.g., Follow up with {company}",
+      subTaskAdd: "Add sub-task",
     },
   },
 
@@ -260,6 +277,10 @@ export const en: TranslationSchema = {
     typeDate: "Date",
     typeCheckbox: "Checkbox",
     typeRadio: "Radio",
+    typeFile: "File",
+    // File field
+    fileAccept: "Accepted formats",
+    fileMaxSize: "Max size",
     // Props
     fieldName: "Field Name",
     fieldLabel: "Label",

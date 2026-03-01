@@ -88,19 +88,32 @@
 - [x] Public form GET rate limited (30/min anti-enumeration)
 
 ### Phase 2 : MVP Features ✅ COMPLÉTÉ
-- [x] Custom Fields : champs dynamiques (text, email, number, textarea, select)
-  - lib/validation/fields.ts - schémas Zod pour définition des champs
+- [x] Custom Fields : champs dynamiques (text, email, number, textarea, select, url, phone, date, checkbox, radio, file)
+  - lib/validation/fields.ts - schémas Zod pour définition des champs (11 types dont file)
   - lib/db/schema.ts - colonne `fields` JSONB sur table forms
   - Validation dynamique côté serveur avec buildSubmissionSchema()
   - Rendu dynamique dans public-form-client.tsx
   - Backward compatible: DEFAULT_FIELDS (email + message) si pas de champs définis
 - [x] Field Mapping Backlog : mapper les champs vers Backlog custom fields
-  - lib/validation/backlogMapping.ts - schémas Zod pour mapping
+  - lib/validation/backlogMapping.ts - schémas Zod pour mapping + assignmentRule + subTasks
   - lib/backlog/issue.ts - buildMappedIssue() avec templates
-  - app/api/integrations/backlog/project-meta/route.ts - metadata Backlog (issueTypes, priorities, customFields)
-  - BacklogSettingsClient.tsx - UI complète pour configurer le mapping
+  - app/api/integrations/backlog/project-meta/route.ts - metadata Backlog (issueTypes, priorities, customFields, members)
+  - BacklogSettingsClient.tsx - UI complète pour configurer le mapping, assignation, sous-tâches
   - drizzle/0005_add_backlog_field_mapping.sql - migration field_mapping JSONB
   - 47 tests unitaires (test/backlog.mapping.test.ts)
+- [x] Auto-assignation Backlog : règles statiques ou conditionnelles (field_match)
+  - lib/validation/backlogMapping.ts - AssignmentRuleSchema, evaluateAssignmentRule()
+  - BacklogSettingsClient.tsx - UI radio none/static/field_match, dropdown membres
+- [x] Sous-tâches automatiques : templates de sous-tâches (max 5) après création ticket parent
+  - lib/backlog/client.ts - createBacklogSubTasks()
+  - lib/validation/backlogMapping.ts - SubTaskTemplateSchema
+  - BacklogSettingsClient.tsx - UI liste éditable avec assignee optionnel
+- [x] Pièces jointes : upload fichiers vers Backlog (file field type)
+  - lib/validation/fields.ts - FileFieldSchema (accept, maxFileSize)
+  - lib/backlog/client.ts - backlogUploadAttachment() multipart
+  - app/api/public/forms/[slug]/submit/route.ts - FormData parsing, validation (10MB, 3 files, MIME)
+  - app/f/[slug]/public-form-client.tsx - input file + FormData submission
+  - Sécurité: validation taille, type MIME, pas de stockage local (stream vers Backlog)
 - [x] Admin Field Builder UI : interface pour configurer les champs
   - components/field-builder/ - Composants UI (FormEditClient, FieldList, FieldEditor, SelectOptionsEditor, FormPreview)
   - app/(dashboard)/forms/[id]/edit/page.tsx - Page d'édition

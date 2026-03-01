@@ -7,7 +7,7 @@ import { z } from "zod";
 // Field Types
 // =============================================================================
 
-export const FIELD_TYPES = ["text", "email", "number", "textarea", "select", "url", "phone", "date", "checkbox", "radio"] as const;
+export const FIELD_TYPES = ["text", "email", "number", "textarea", "select", "url", "phone", "date", "checkbox", "radio", "file"] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
 // =============================================================================
@@ -103,6 +103,15 @@ const RadioFieldSchema = BaseFieldSchema.extend({
     .max(50),
 });
 
+// File field
+const FileFieldSchema = BaseFieldSchema.extend({
+  type: z.literal("file"),
+  // Comma-separated MIME types or extensions, e.g. "image/*,.pdf,.docx"
+  accept: z.string().trim().max(500).optional().or(z.literal("")),
+  // Max file size in bytes (default 10MB)
+  maxFileSize: z.number().int().min(1).max(10_485_760).optional(),
+});
+
 // =============================================================================
 // Combined Field Schema
 // =============================================================================
@@ -118,6 +127,7 @@ export const FormFieldSchema = z.discriminatedUnion("type", [
   DateFieldSchema,
   CheckboxFieldSchema,
   RadioFieldSchema,
+  FileFieldSchema,
 ]);
 
 export type FormField = z.infer<typeof FormFieldSchema>;
@@ -174,6 +184,9 @@ export function buildSubmissionSchema(
   const shape: Record<string, z.ZodTypeAny> = {};
 
   for (const field of fields) {
+    // File fields are handled separately via FormData, not JSON payload
+    if (field.type === "file") continue;
+
     let fieldSchema: z.ZodTypeAny;
 
     switch (field.type) {
@@ -285,3 +298,26 @@ export function buildSubmissionSchema(
 
   return z.object(shape);
 }
+
+/**
+ * Check if field definitions include any file fields
+ */
+export function hasFileFields(fields: FormField[]): boolean {
+  return fields.some((f) => f.type === "file");
+}
+
+// File upload constants
+export const FILE_MAX_SIZE = 10_485_760; // 10MB (Backlog limit)
+export const FILE_MAX_COUNT = 3; // Max files per submission
+export const FILE_ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/plain",
+  "text/csv",
+];

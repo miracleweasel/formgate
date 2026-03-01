@@ -1,9 +1,10 @@
 // app/f/[slug]/public-form-client.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { t } from "@/lib/i18n";
 import type { FormField } from "@/lib/validation/fields";
+import { FILE_MAX_SIZE, FILE_MAX_COUNT } from "@/lib/validation/fields";
 
 type Props = {
   slug: string;
@@ -13,16 +14,22 @@ type Props = {
 type FieldValue = string | number | boolean | null;
 
 export default function PublicFormClient({ slug, fields }: Props) {
+  const hasFiles = useMemo(() => fields.some((f) => f.type === "file"), [fields]);
+
   // Initialize form state from field definitions
   const [values, setValues] = useState<Record<string, FieldValue>>(() => {
     const initial: Record<string, FieldValue> = {};
     for (const field of fields) {
+      if (field.type === "file") continue; // File fields use separate state
       if (field.type === "number") initial[field.name] = null;
       else if (field.type === "checkbox") initial[field.name] = false;
       else initial[field.name] = "";
     }
     return initial;
   });
+
+  // Separate state for file inputs
+  const [fileValues, setFileValues] = useState<Record<string, File | null>>({});
 
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -45,6 +52,23 @@ export default function PublicFormClient({ slug, fields }: Props) {
     const newErrors: Record<string, string> = {};
 
     for (const field of fields) {
+      // File field validation
+      if (field.type === "file") {
+        const file = fileValues[field.name];
+        if (field.required && !file) {
+          newErrors[field.name] = t.errors.required;
+          continue;
+        }
+        if (file) {
+          const maxSize = field.maxFileSize ?? FILE_MAX_SIZE;
+          if (file.size > maxSize) {
+            newErrors[field.name] = t.publicForm.fileTooLarge;
+            continue;
+          }
+        }
+        continue;
+      }
+
       const value = values[field.name];
 
       // Required check
@@ -91,14 +115,38 @@ export default function PublicFormClient({ slug, fields }: Props) {
     setErrors({});
 
     try {
-      const res = await fetch(
-        `/api/public/forms/${encodeURIComponent(slug)}/submit`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ payload: values }),
+      // Check total file count
+      const fileEntries = Object.entries(fileValues).filter(([, f]) => f !== null);
+      if (fileEntries.length > FILE_MAX_COUNT) {
+        setErrors({ _form: t.publicForm.tooManyFiles });
+        setSubmitting(false);
+        return;
+      }
+
+      let res: Response;
+
+      if (hasFiles && fileEntries.length > 0) {
+        // Use FormData for file uploads
+        const formData = new FormData();
+        formData.append("_payload", JSON.stringify(values));
+        for (const [name, file] of fileEntries) {
+          if (file) formData.append(name, file);
         }
-      );
+        res = await fetch(
+          `/api/public/forms/${encodeURIComponent(slug)}/submit`,
+          { method: "POST", body: formData }
+        );
+      } else {
+        // Standard JSON submission
+        res = await fetch(
+          `/api/public/forms/${encodeURIComponent(slug)}/submit`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ payload: values }),
+          }
+        );
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -155,8 +203,15 @@ export default function PublicFormClient({ slug, fields }: Props) {
         <DynamicField
           key={field.name}
           field={field}
-          value={values[field.name]}
+          value={field.type === "file" ? null : values[field.name]}
+          file={field.type === "file" ? (fileValues[field.name] ?? null) : null}
           onChange={(v) => updateValue(field.name, v)}
+          onFileChange={field.type === "file" ? (f) => {
+            setFileValues((prev) => ({ ...prev, [field.name]: f }));
+            if (errors[field.name]) {
+              setErrors((prev) => { const next = { ...prev }; delete next[field.name]; return next; });
+            }
+          } : undefined}
           error={errors[field.name]}
           disabled={submitting}
         />
@@ -186,13 +241,17 @@ export default function PublicFormClient({ slug, fields }: Props) {
 function DynamicField({
   field,
   value,
+  file,
   onChange,
+  onFileChange,
   error,
   disabled,
 }: {
   field: FormField;
   value: FieldValue;
+  file?: File | null;
   onChange: (v: FieldValue) => void;
+  onFileChange?: (f: File | null) => void;
   error?: string;
   disabled?: boolean;
 }) {
@@ -270,6 +329,25 @@ function DynamicField({
               {opt.label}
             </label>
           ))}
+        </div>
+      ) : field.type === "file" ? (
+        <div>
+          <input
+            id={inputId}
+            type="file"
+            className={`input ${error ? "input-error" : ""}`}
+            accept={field.accept || undefined}
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              onFileChange?.(f);
+            }}
+            disabled={disabled}
+          />
+          {file && (
+            <div className="text-xs mt-1" style={{ color: "var(--color-neutral-500)" }}>
+              {file.name} ({(file.size / 1024).toFixed(0)} KB)
+            </div>
+          )}
         </div>
       ) : (
         <input

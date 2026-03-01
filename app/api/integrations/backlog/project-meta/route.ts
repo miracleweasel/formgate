@@ -12,6 +12,7 @@ import { decryptString } from "@/lib/crypto";
 
 type BacklogIssueType = { id: number; name: string; color: string };
 type BacklogPriority = { id: number; name: string };
+type BacklogMember = { id: number; name: string; mailAddress?: string };
 
 /**
  * GET /api/integrations/backlog/project-meta?projectKey=XXX
@@ -53,11 +54,12 @@ export async function GET(req: Request) {
 
     const cfg = { spaceUrl: conn.spaceUrl, apiKey };
 
-    // Fetch issue types, custom fields, and priorities in parallel
-    const [issueTypesRes, customFieldsRes, prioritiesRes] = await Promise.all([
+    // Fetch issue types, custom fields, priorities, and members in parallel
+    const [issueTypesRes, customFieldsRes, prioritiesRes, membersRes] = await Promise.all([
       backlogGetJson<BacklogIssueType[]>(cfg, `/api/v2/projects/${projectKey}/issueTypes`),
       getProjectCustomFields(cfg, projectKey),
       backlogGetJson<BacklogPriority[]>(cfg, "/api/v2/priorities"),
+      backlogGetJson<BacklogMember[]>(cfg, `/api/v2/projects/${projectKey}/users`),
     ]);
 
     return NextResponse.json({
@@ -65,6 +67,9 @@ export async function GET(req: Request) {
       issueTypes: issueTypesRes.ok ? issueTypesRes.data : [],
       customFields: customFieldsRes.ok ? customFieldsRes.data : [],
       priorities: prioritiesRes.ok ? prioritiesRes.data : [],
+      members: membersRes.ok
+        ? membersRes.data.map((m) => ({ id: m.id, name: m.name }))
+        : [],
     });
   } catch {
     console.error("[integrations/backlog/project-meta] error");

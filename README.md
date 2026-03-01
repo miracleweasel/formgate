@@ -30,7 +30,7 @@ pnpm build                  # Production build
 | **Multi-User Support** | ✅ Done | `lib/auth/requireUser.ts`, `lib/auth/getSessionEmail.ts` |
 | **Session Management** | ✅ Done | `lib/auth/session.ts`, `lib/auth/cookies.ts` |
 | **Form CRUD** | ✅ Done | `app/api/forms/route.ts`, `app/api/forms/[id]/route.ts` |
-| **Custom Fields (10 types)** | ✅ Done | `lib/validation/fields.ts`, `lib/db/schema.ts` |
+| **Custom Fields (11 types)** | ✅ Done | `lib/validation/fields.ts`, `lib/db/schema.ts` |
 | **Admin Field Builder UI** | ✅ Done | `components/field-builder/`, `app/(dashboard)/forms/[id]/edit/` |
 | **Form Templates (6)** | ✅ Done | `lib/templates/formTemplates.ts`, `app/(dashboard)/forms/new/page.tsx` |
 | **Field Mapping Backlog** | ✅ Done | `lib/validation/backlogMapping.ts`, `lib/backlog/issue.ts` |
@@ -38,7 +38,10 @@ pnpm build                  # Production build
 | **Form Submission** | ✅ Done | `app/api/public/forms/[slug]/submit/route.ts` |
 | **Backlog Connection** | ✅ Done | `lib/backlog/client.ts` |
 | **Backlog Auto-Issue** | ✅ Done | Non-blocking on submit, with field mapping |
-| **Backlog Project Meta** | ✅ Done | `app/api/integrations/backlog/project-meta/route.ts` |
+| **Backlog Auto-Assign** | ✅ Done | Static or field-match rules (`lib/validation/backlogMapping.ts`) |
+| **Backlog Sub-Tasks** | ✅ Done | Auto-create up to 5 sub-tasks with templates (`lib/backlog/client.ts`) |
+| **File Attachments** | ✅ Done | Upload files to Backlog via multipart (max 10MB, 3 files) |
+| **Backlog Project Meta** | ✅ Done | `app/api/integrations/backlog/project-meta/route.ts` (+ members) |
 | **Billing Enforcement** | ✅ Hardened | `lib/billing/planLimits.ts` (atomic, race-condition safe, per-user) |
 | **Billing UI** | ✅ Done | `app/(dashboard)/billing/page.tsx` (plan comparison, usage bars, portal) |
 | **Branding (server-side)** | ✅ Done | `app/f/[slug]/page.tsx` (per-user subscription check) |
@@ -245,7 +248,7 @@ integration_backlog_form_settings (
 - `POST /api/integrations/backlog` - Create/update connection
 - `DELETE /api/integrations/backlog` - Delete connection
 - `POST /api/integrations/backlog/test` - Test connection
-- `GET /api/integrations/backlog/project-meta` - Get issue types, priorities, custom fields
+- `GET /api/integrations/backlog/project-meta` - Get issue types, priorities, custom fields, members
 - `GET /api/forms/[id]/integrations/backlog` - Form Backlog settings
 - `POST /api/forms/[id]/integrations/backlog` - Update form settings
 
@@ -348,11 +351,11 @@ pnpm test -- --grep "field"  # Run specific tests
 ## Recent Commits
 
 ```
+(pending) feat(backlog): add auto-assign, sub-tasks, file attachments
+00f0847 docs: update README with new field types, templates, recent commits
 a2a4fe5 feat(fields): add 5 new field types and 6 form templates
 7467b01 feat(seo): add robots.txt, sitemap, OG image for social sharing
 482fdd4 chore: cleanup defaults, add FormGate favicon
-4ea72d9 fix(deploy): simplify Dockerfile for non-standalone mode
-84f2ab9 fix(deploy): remove standalone mode, use standard next start
 ```
 
 ---

@@ -133,6 +133,8 @@ export const ja: TranslationSchema = {
     thankYouMessage: "お問い合わせを受け付けました。ありがとうございます。",
     poweredBy: "Powered by FormGate",
     formNotFound: "このフォームは存在しないか、削除されました。",
+    fileTooLarge: "ファイルサイズが大きすぎます。",
+    tooManyFiles: "ファイル数が上限を超えています（最大3ファイル）。",
   },
 
   // ==========================================================================
@@ -198,6 +200,21 @@ export const ja: TranslationSchema = {
       loadingMeta: "プロジェクト情報を読み込み中...",
       loadMetaFailed: "プロジェクト情報の取得に失敗しました。",
       refreshMeta: "再読み込み",
+      // Assignment
+      assignment: "担当者の自動割り当て",
+      assignmentDesc: "課題作成時に担当者を自動で設定します。",
+      assignNone: "割り当てなし",
+      assignStatic: "固定メンバー",
+      assignFieldMatch: "フィールドの値で判定",
+      assignSelectMember: "メンバーを選択",
+      assignRuleValue: "フィールドの値",
+      assignAddRule: "ルールを追加",
+      assignFallback: "該当なしの場合のフォールバック",
+      // Sub-tasks
+      subTasks: "サブタスク自動作成",
+      subTasksDesc: "親課題作成後にサブタスクを自動生成します（最大5件）。件名に{フィールド名}でテンプレート可能。",
+      subTaskSummaryPlaceholder: "例: {company}の対応確認",
+      subTaskAdd: "サブタスクを追加",
     },
   },
 
@@ -260,6 +277,10 @@ export const ja: TranslationSchema = {
     typeDate: "日付",
     typeCheckbox: "チェックボックス",
     typeRadio: "ラジオボタン",
+    typeFile: "ファイル",
+    // File field
+    fileAccept: "許可する形式",
+    fileMaxSize: "最大サイズ",
     // Props
     fieldName: "フィールド名",
     fieldLabel: "ラベル",
