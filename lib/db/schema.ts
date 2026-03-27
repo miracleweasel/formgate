@@ -1,0 +1,132 @@
+// lib/db/schema.ts
+import { pgTable, uuid, text, timestamp, jsonb, index, boolean } from "drizzle-orm/pg-core";
+import type { FormField } from "@/lib/validation/fields";
+import type { BacklogFieldMapping } from "@/lib/validation/backlogMapping";
+
+// --- Users (multi-user auth) ---
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  emailIdx: index("users_email_idx").on(t.email),
+}));
+
+// --- Magic links ---
+
+export const magicLinks = pgTable("magic_links", {
+  id: uuid("id").primaryKey(),
+  email: text("email").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  emailIdx: index("magic_links_email_idx").on(t.email),
+  tokenHashIdx: index("magic_links_token_hash_idx").on(t.tokenHash),
+}));
+
+// --- Forms ---
+
+export const forms = pgTable("forms", {
+  id: uuid("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  fields: jsonb("fields").$type<FormField[]>().default([]),
+  userEmail: text("user_email"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+}, (t) => ({
+  userEmailIdx: index("forms_user_email_idx").on(t.userEmail),
+}));
+
+export const submissions = pgTable(
+  "submissions",
+  {
+    id: uuid("id").primaryKey(),
+    formId: uuid("form_id")
+      .notNull()
+      .references(() => forms.id, { onDelete: "cascade" }),
+
+    payload: jsonb("payload").notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    formIdIdx: index("submissions_form_id_idx").on(t.formId),
+    createdAtIdx: index("submissions_created_at_idx").on(t.createdAt),
+  })
+);
+
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").primaryKey(),
+
+    userEmail: text("user_email").notNull(),
+
+    status: text("status").notNull(), // 'active' | 'inactive'
+
+    lsSubscriptionId: text("ls_subscription_id").unique(),
+    lsCustomerId: text("ls_customer_id"),
+
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    userEmailIdx: index("subscriptions_user_email_idx").on(t.userEmail),
+    statusIdx: index("subscriptions_status_idx").on(t.status),
+  })
+);
+
+// --- Backlog integration (MVP) ---
+
+export const integrationBacklogConnections = pgTable(
+  "integration_backlog_connections",
+  {
+    id: uuid("id").primaryKey(),
+    userEmail: text("user_email").notNull(),
+
+    spaceUrl: text("space_url").notNull(),
+    apiKey: text("api_key").notNull(), // AES-256-GCM encrypted, NEVER returned to client
+    defaultProjectKey: text("default_project_key").notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    userEmailIdx: index("ibc_user_email_idx").on(t.userEmail),
+  })
+);
+
+export const integrationBacklogFormSettings = pgTable(
+  "integration_backlog_form_settings",
+  {
+    formId: uuid("form_id")
+      .primaryKey()
+      .references(() => forms.id, { onDelete: "cascade" }),
+
+    enabled: boolean("enabled").notNull().default(false),
+    projectKey: text("project_key"), // nullable override, else use connection.defaultProjectKey
+    fieldMapping: jsonb("field_mapping").$type<BacklogFieldMapping>(), // Field mapping config
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    enabledIdx: index("ibfs_enabled_idx").on(t.enabled),
+  })
+);

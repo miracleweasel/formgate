@@ -1,0 +1,43 @@
+// app/(dashboard)/forms/[id]/DeleteButton.tsx
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { t } from "@/lib/i18n";
+
+export default function DeleteButton({ id }: { id: string }) {
+  const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
+
+  async function onDelete() {
+    if (!confirm(t.forms.deleteConfirm)) return;
+
+    setDeleting(true);
+    const res = await fetch(`/api/forms/${id}`, { method: "DELETE" });
+    setDeleting(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data?.error ?? t.errors.generic);
+      return;
+    }
+
+    router.push("/forms");
+    router.refresh();
+  }
+
+  return (
+    <button
+      onClick={onDelete}
+      disabled={deleting}
+      className="btn btn-sm"
+      style={{
+        background: "var(--color-error-50)",
+        color: "var(--color-error-700)",
+        borderColor: "var(--color-error-300)",
+      }}
+    >
+      {deleting ? t.forms.deleting : t.common.delete}
+    </button>
+  );
+}
